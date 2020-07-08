@@ -225,6 +225,12 @@ function(nano_project)
     set(${PROJECT_NAME}_LICENSE        ${LICENSE}
         CACHE STRING "License for ${PROJECT_NAME}")
 
+    set(${PROJECT_NAME}_LICENSE_FILE   ${CMAKE_CURRENT_LIST_DIR}/LICENSE
+        CACHE STRING "License file for ${PROJECT_NAME}")
+
+    set(${PROJECT_NAME}_THIRD_PARTY_FILE ${CMAKE_CURRENT_LIST_DIR}/THIRD-PARTY-NOTICES.md
+        CACHE STRING "License file for ${PROJECT_NAME}")
+
 endfunction()
 
 ################################################################################
@@ -236,6 +242,8 @@ macro(nano_project_vars)
     set(prj_description         ${PROJECT_DESCRIPTION})
     set(prj_author              ${${PROJECT_NAME}_AUTHOR})
     set(prj_license             ${${PROJECT_NAME}_LICENSE})
+    set(prj_license_file        ${${PROJECT_NAME}_LICENSE_FILE})
+    set(prj_third_party_file    ${${PROJECT_NAME}_THIRD_PARTY_FILE})
     set(prj_git_repo            ${${PROJECT_NAME}_GIT_REPO})
     set(prj_copyright           ${${PROJECT_NAME}_COPYRIGHT})
     set(prj_description         ${${PROJECT_NAME}_DESCRIPTION})
@@ -364,6 +372,18 @@ function(nano_project_install)
         install(FILES
             ${NANO_BUILD_SYS_DIR}/src/makefile
             DESTINATION ${prj_install_dir_src_base})
+
+        if(EXISTS ${prj_license_file})
+            install(FILES
+                ${prj_license_file}
+                DESTINATION ${prj_install_dir_src})
+        endif()
+
+        if(EXISTS ${prj_third_party_file})
+            install(FILES
+                ${prj_third_party_file}
+                DESTINATION ${prj_install_dir_src})
+        endif()
     endif()
 
 endfunction()

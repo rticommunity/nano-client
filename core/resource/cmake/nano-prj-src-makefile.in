@@ -4,6 +4,10 @@ mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 
 @prj_prefix@_COMPONENTS := @prj_components_name@
 
+@prj_prefix@_LICENSE := $(@prj_prefix@_DIR)/LICENSE
+
+@prj_prefix@_THIRD_PARTY_NOTICES := $(@prj_prefix@_DIR)/THIRD-PARTY-NOTICES.md
+
 .PHONY: @prj_name@
 
 @prj_name@ : $(@prj_prefix@_COMPONENTS:%=@prj_name@-%)

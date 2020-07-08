@@ -164,6 +164,7 @@ endef
 	install \
 	clean \
 	clean-install \
+	clean-build \
 	fullarchive \
 	archive \
 	nano-agent \
@@ -171,11 +172,15 @@ endef
 
 all: install
 
-install: $(LIBRARIES:%=%.library)
+install: $(LIBRARIES:%=%.library) \
+	     clean-build
 	@echo Arduino libraries installed: $(INSTALL_DIR)
 
-clean: $(LIBRARIES:%=%.clean)
-	@$(RM) -rf $(NANO_INSTALL_DIR) $(NANO_BUILD_DIR)
+clean: $(LIBRARIES:%=%.clean) \
+	   clean-build
+
+clean-build:
+	@$(RM) -rf $(BUILD_DIR)
 
 clean-install: clean \
 			   install
@@ -194,7 +199,8 @@ fullarchive: $(ARCHIVES:%=%.fullarchive)
 	$(TAR) -czf $*.tgz $(call LIBRARY_DIRS)
 	@$(call GENERATED_ARCHIVE, $*.tgz)
 
-archive: $(foreach tgt,$(ARCHIVE_FORMATS:%=%.archive),$(LIBRARIES:%=%.$(tgt)))
+archive: $(foreach tgt,$(ARCHIVE_FORMATS:%=%.archive),$(LIBRARIES:%=%.$(tgt))) \
+	     clean-build
 
 %.zip.archive: %.library
 	@cd $(INSTALL_DIR) && \
@@ -278,6 +284,7 @@ nano-client-arduino.dist: %.dist : %.nano
 
 %.nanosrc: $(NANO_INSTALL_DIR)
 	@$(MAKE) -f $(NANO_MK) \
+		    NANO_LICENSE_PREFIX=$(call LIB_DIR,$*) \
 	        NANO_SRC_PREFIX=$(call LIB_DIR_SRC, $*)/nano-src \
 			NANO_INC_PREFIX=$(call LIB_DIR_SRC, $*) \
 	        copy-src

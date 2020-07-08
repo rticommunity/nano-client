@@ -62,6 +62,7 @@ copy-src: $(nano_SOURCE_FILES) \
 	       		 $(nano_HEADER_DIR)
 	@$(CP) $(nano_SOURCE_FILES) $(nano_SOURCE_DIR)/
 	@$(CP) $(nano_HEADER_FILES) $(nano_HEADER_DIR)/
+	@$(CP) $(nano_client_LICENSE) $(nano_client_THIRD_PARTY_NOTICES) $(NANO_LICENSE_PREFIX)/
 
 copy-user-cfg:
 	@$(MKDIR) -p $(nano_HEADER_DIR)

@@ -11,7 +11,7 @@ RTI nano-client User Manual
 |RTI| |NANO_CLIENT| provides a lightweight, open-source C/C++ API to access any
 DDS Global Data Space using the :link_omg_ddsxrce:`standard XRCE protocol <>`.
 
-Condier |RTI| |NANO_AGENT| :link_nano_agent_git:`project-page <>`
+Consider :link_nano_agent_git:`RTI nano-agent <>`
 for a standard-compliant implementation of the XRCE Agent built with
 :link_connext_home:`RTI Connext DDS <>`.
 
