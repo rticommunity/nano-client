@@ -1,0 +1,47 @@
+@PACKAGE_INIT@
+
+# This macro enables usage of find_dependency().
+# https://cmake.org/cmake/help/v3.11/module/CMakeFindDependencyMacro.html
+include(CMakeFindDependencyMacro)
+
+get_filename_component(nano-client-cpp_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+
+set(nano-client-cpp_COMPONENTS          clientcpp)
+
+set(nano-client_FIND_COMPONENTS       ${nano-client-cpp_FIND_COMPONENTS})
+
+if(NOT "${nano-client_FIND_COMPONENTS}" STREQUAL "")
+    list(REMOVE_ITEM nano-client_FIND_COMPONENTS ${nano-client-cpp_COMPONENTS})
+
+    if(NOT "${nano-client_FIND_COMPONENTS}" STREQUAL "")
+        find_dependency(nano-client CONFIG REQUIRED
+            COMPONENTS ${nano-client_FIND_COMPONENTS})
+
+        list(REMOVE_ITEM nano-client-cpp_FIND_COMPONENTS ${nano-client_FIND_COMPONENTS})
+    endif()
+
+endif()
+
+if (NOT TARGET nano::nanoclientcpp)
+    include(${nano-client-cpp_DIR}/nano-client-cpp-clientcpp-targets.cmake)
+endif()
+
+foreach(_req_component IN LISTS nano-client-cpp_FIND_COMPONENTS)
+    list(FIND nano-client-cpp_COMPONENTS "${_req_component}" _req_component_FOUND)
+    if (_req_component_FOUND EQUAL -1)
+        set(nano-client-cpp_FOUND
+                False)
+        set(nano-client-c[[_NOT_FOUND_MESSAGE
+                "Unsupported nano-client-cpp component: ${_req_component}")
+    endif()
+
+    if (NOT TARGET nano::nano${_req_component})
+        include(${nano-client-cpp_DIR}/nano-client-cpp-${_req_component}-targets.cmake)
+    endif()
+    set(nano-client-cpp_${_req_component}_FOUND         true)
+endforeach()
+
+check_required_components(nano-client-cpp)
+
+
+

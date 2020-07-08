@@ -1,0 +1,69 @@
+/******************************************************************************
+ *
+ * (c) 2020 Copyright, Real-Time Innovations, Inc. (RTI)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
+
+/******************************************************************************
+ Start nanoagentd with the following command (change paths and other arguments
+ according to your environment):
+ 
+   nanoagentd -S -Sd /dev/ttyUSB0 -Ss 115200 -St 1000 \
+              -c RTI_Nano/extras/sensor_agent.xml
+ 
+ ******************************************************************************/
+
+#include <nano_client_arduino.h>
+
+#define CLIENT_KEY          0x01020304
+#define WRITER_ID           0x4065
+#define TRANSPORT_MTU       128
+#define PUBLISH_DELAY       1000
+
+XrceData transport_recv_buffer[
+            XRCE_TRANSPORT_RECV_BUFFER_SIZE(TRANSPORT_MTU)] = { 0 };
+
+XrceSerialTransport transport(
+    transport_recv_buffer, sizeof(transport_recv_buffer));
+
+XrceClient client(transport, CLIENT_KEY);
+
+XrceDataWriter writer(client, WRITER_ID);
+
+struct SensorData
+{
+    uint8_t id[4];
+    uint32_t value;
+};
+
+SensorData data;
+
+void setup()
+{
+    /* Initialize XRCE client and connect to XRCE agent */
+    client.connect();
+
+    /* Initialize sensor data */
+    data.value = 0;
+    /* Store client key as big endian */
+    NANO_u32_serialize(CLIENT_KEY, data.id, false);
+}
+
+void loop()
+{
+    data.value += 1;
+    writer.write_data((uint8_t*)&data, sizeof(data));
+    delay(PUBLISH_DELAY);
+}

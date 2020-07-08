@@ -1,0 +1,12 @@
+@PACKAGE_INIT@
+
+get_filename_component(nano-arduino-c_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+
+if (NOT TARGET nano::nanoarduinoc)
+    include(${nano-arduino-c_DIR}/nano-arduino-c-arduinoc-targets.cmake)
+endif()
+
+check_required_components(nano-arduino-c)
+
+
+

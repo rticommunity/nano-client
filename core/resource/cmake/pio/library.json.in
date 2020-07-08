@@ -1,0 +1,13 @@
+{
+    "name":         "@prj_name@",
+    "version":      "@prj_version@",
+    "repository":
+    {
+        "type": "git",
+        "url":  "@prj_git_repo@"
+    },
+    "description":  "@prj_description@",
+    "license":      "@prj_license@",
+    "frameworks":   "*",
+    "platforms":    "*"
+}

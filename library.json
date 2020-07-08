@@ -1,0 +1,44 @@
+{
+    "name": "nano-client-arduino",
+    "version": "0.1.0",
+    "repository":
+    {
+        "type": "git",
+        "url": "https://github.com/rticommunity/nano-client.git"
+    },
+    "description": "An open-source XRCE Client API for Arduino-compatible systems",
+    "keywords": "middleware, communication, network, publish-subscribe",
+    "license": "Apache-2.0",
+    "export": 
+    {
+        "include": 
+        [
+            "src/*.c",
+            "include/*/*.h",
+            "core/src/*/*.c",
+            "core/include/*/*.h",
+            "extras/nano-client-cpp/src/*/*.cpp",
+            "extras/nano-client-cpp/include/*/*.h",
+            "extras/arduino-c/src/*.cpp",
+            "extras/arduino-c/src/*.h"
+        ]
+    },
+    "platforms": "*",
+    "frameworks": "arduino",
+    "build": {
+        "flags":
+        [
+            "-I extras/nano-client-arduino/src",
+            "-I core/include",
+            "-I extras/nano-client-cpp/include",
+            "-I extras/arduino-c/include"
+        ],
+        "srcDir": "",
+        "srcFilter": [
+            "+<src/*.c>",
+            "+<core/src/*/*.c>",
+            "+<extras/nano-client-cpp/src/*/*.cpp>",
+            "+<extras/arduino-c/src/*.cpp>"
+        ]
+    }
+}

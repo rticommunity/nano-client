@@ -1,0 +1,49 @@
+@PACKAGE_INIT@
+
+# This macro enables usage of find_dependency().
+# https://cmake.org/cmake/help/v3.11/module/CMakeFindDependencyMacro.html
+include(CMakeFindDependencyMacro)
+
+get_filename_component(nano-client_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+
+set(nano-client_COMPONENTS          client)
+
+set(nano-core_FIND_COMPONENTS       ${nano-client_FIND_COMPONENTS})
+
+if(NOT "${nano-core_FIND_COMPONENTS}" STREQUAL "")
+    list(REMOVE_ITEM nano-core_FIND_COMPONENTS ${nano-client_COMPONENTS})
+
+    if(NOT "${nano-core_FIND_COMPONENTS}" STREQUAL "")
+        find_dependency(nano-core CONFIG REQUIRED
+            COMPONENTS ${nano-core_FIND_COMPONENTS})
+        
+        list(REMOVE_ITEM nano-client_FIND_COMPONENTS ${nano-core_FIND_COMPONENTS})
+    endif()
+
+else()
+    find_dependency(nano-core CONFIG REQUIRED)
+endif()
+
+if (NOT TARGET nano::nanoclient)
+    include(${nano-client_DIR}/nano-client-client-targets.cmake)
+endif()
+
+foreach(_req_component IN LISTS nano-client_FIND_COMPONENTS)
+    list(FIND nano-client_COMPONENTS "${_req_component}" _req_component_FOUND)
+    if (_req_component_FOUND EQUAL -1)
+        set(nano-client_FOUND
+                False)
+        set(nano-client_NOT_FOUND_MESSAGE
+                "Unsupported nano-client component: ${_req_component}")
+    endif()
+
+    if (NOT TARGET nano::nano${_req_component})
+        include(${nano-client_DIR}/nano-client-${_req_component}-targets.cmake)
+    endif()
+    set(nano-client_${_req_component}_FOUND         true)
+endforeach()
+
+check_required_components(nano-client)
+
+
+

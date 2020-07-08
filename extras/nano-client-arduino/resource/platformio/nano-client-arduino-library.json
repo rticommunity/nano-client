@@ -1,0 +1,19 @@
+{
+    "name":         "nano-client-arduino",
+    "version":      "0.1.0",
+    "description":  "An XRCE Client API",
+    "license":      "Apache-2.0",
+    "authors":
+    {
+        "name": "Real-Time Innovations, Inc.",
+        "email": "asorbini@rti.com",
+        "url": "http://www.rti.com"
+    },
+    "frameworks":   "arduino",
+    "platforms":    "*",
+    "build" : {
+        "flags" : [
+            "-D NANO_PLATFORM=NANO_PLATFORM_ARDUINO"
+        ]
+    }
+}

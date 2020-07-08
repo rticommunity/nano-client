@@ -1,0 +1,65 @@
+@PACKAGE_INIT@
+
+# Determine name of package from name of this CMake file
+get_filename_component(@NANO_PKG@_pkg_name "${CMAKE_CURRENT_LIST_FILE}" NAME_WE)
+string(REPLACE "-config" "" @NANO_PKG@_pkg_name "${@NANO_PKG@_pkg_name}")
+string(REPLACE "nano-" "" @NANO_PKG@_pkg_name "${@NANO_PKG@_pkg_name}")
+
+get_filename_component(
+    ${@NANO_PKG@_pkg_name}_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+
+# This macro enables usage of find_dependency().
+# https://cmake.org/cmake/help/v3.11/module/CMakeFindDependencyMacro.html
+include(CMakeFindDependencyMacro)
+
+set(nano_${@NANO_PKG@_pkg_name}_deps       "@NANO_PKG_DEPS@")
+
+foreach(nano_dep IN LISTS nano_${@NANO_PKG@_pkg_name}_deps)
+    find_dependency(${nano_dep} REQUIRED)
+endforeach()
+
+# Declare the used packages in order to communicate the requirements upstream.
+if(NOT TARGET "nano::nano${@NANO_PKG@_pkg_name}")
+    include(
+        "${${@NANO_PKG@_pkg_name}_CMAKE_DIR}/nano-${@NANO_PKG@_pkg_name}-targets.cmake")
+endif()
+
+check_required_components(nano-${pkg_name})
+
+
+################################################################################
+
+@PACKAGE_INIT@
+
+# This macro enables usage of find_dependency().
+# https://cmake.org/cmake/help/v3.11/module/CMakeFindDependencyMacro.html
+include(CMakeFindDependencyMacro)
+
+set(@prj_prefix@_NAME               "@PROJECT_NAME@")
+set(@prj_prefix@_COMPONENTS         @prj_components@)
+set(@prj_prefix@_COMPONENTS_NAME    @prj_components_name@)
+set(@prj_prefix@_COMPONENTS_TARGETS @prj_components_tgt@)
+set(@prj_prefix@_DEPS               @prj_deps@)
+
+get_filename_component(@prj_prefix@_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+
+foreach(dep IN @prj_deps@)
+    find_dependency(${dep} REQUIRED)
+endforeach()
+
+foreach(_req_component IN @PROJECT_NAME@_FIND_COMPONENTS)
+    if (NOT ";${@prj_prefix@_COMPONENTS_NAME};" MATCHES _req_component)
+        set(@PROJECT_NAME@_FOUND False)
+        set(@PROJECT_NAME@_NOT_FOUND_MESSAGE "Unsupported component: ${_req_component}")
+    endif()
+
+    if (NOT TARGET nano::${component})
+        include(${@prj_prefix@_DIR}/@PROJECT_NAME@-${component}-targets.cmake)
+    endif()
+endforeach()
+
+
+check_required_components(@PROJECT_NAME@)
+
+
+

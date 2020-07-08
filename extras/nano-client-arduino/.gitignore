@@ -1,0 +1,5 @@
+install/
+config.mk
+nano-client-cpp-build/
+nano-client-cpp-install/
+.vscode/

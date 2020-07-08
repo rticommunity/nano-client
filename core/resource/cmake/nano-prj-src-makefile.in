@@ -1,0 +1,21 @@
+
+mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
+@prj_prefix@_DIR := $(patsubst %/,%,$(dir $(mkfile_path)))
+
+@prj_prefix@_COMPONENTS := @prj_components_name@
+
+.PHONY: @prj_name@
+
+@prj_name@ : $(@prj_prefix@_COMPONENTS:%=@prj_name@-%)
+
+%-info :
+	@printf "Project %s, library %s:\n" "@PROJECT_NAME@" "$($*_NAME)"
+	@printf "    %s:\n      %s\n" "Base directory" "$($*_DIR)"
+	@printf "    %s:\n      %s\n" "Source files" "$($*_SRC)"
+	@printf "    %s:\n      %s\n" "Include files (private)" "$($*_INC)"
+	@printf "    %s:\n      %s\n" "Include files (public)" "$($*_INC_PUB)"
+	@printf "    %s:\n      %s\n" "Compiler definitions" "$($*_DEFINES)"
+	@printf "    %s:\n      %s\n" "Linked libraries" "$($*_LIBS)"
+
+$(foreach component, $(@prj_prefix@_COMPONENTS),\
+$(eval include $(@prj_prefix@_DIR)/@PROJECT_NAME@-$(component).mk))

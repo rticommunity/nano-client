@@ -1,0 +1,172 @@
+/*e
+ * @mainpage RTI nano-client C API
+ * 
+ * @defgroup nano_api nano-client API
+ * @addtogroup nano_api
+ * @{ 
+ * 
+ * @defgroup nano_api_client                XRCE Client
+ *
+ * @defgroup nano_api_clientproperties      XRCE ClientProperties
+ *
+ * @defgroup nano_api_clientlistener        XRCE ClientListener
+ *
+ * @defgroup nano_api_clientrequests        XRCE Client Requests
+ *
+ * @defgroup nano_api_storage               XRCE Storage
+ * @addtogroup nano_api_storage
+ * @{ 
+ * 
+ *      @defgroup nano_api_storage_client       XRCE Client Storage
+ * 
+ *      @defgroup nano_api_storage_clientreqs   XRCE Client Requests Storage
+ *
+ *      @defgroup nano_api_storage_session      XRCE Session Storage
+ *
+ *      @defgroup nano_api_storage_userstreams  XRCE User Streams Storage
+ *
+ *      @defgroup nano_api_storage_stream       XRCE Stream Storage
+ * 
+ * @} *//* nano_api_client *//*e
+ *
+ * @defgroup nano_api_xrcesupport           XRCE Support Types
+ *
+ * @defgroup nano_api_obj                   XRCE Objects
+ * 
+ * @defgroup nano_api_client_transport   XRCE Client Transport
+ * @addtogroup nano_api_client_transport
+ * @{ 
+ * 
+ *      @defgroup nano_api_client_transport_locator XRCE Transport Locators
+ *      @addtogroup nano_api_client_transport_locator
+ *      @{
+ *          @defgroup nano_api_client_transport_locator_small XRCE Transport Locator Small
+ * 
+ *          @defgroup nano_api_client_transport_locator_med XRCE Transport Locator Medium
+ * 
+ *          @defgroup nano_api_client_transport_locator_lrg XRCE Transport Locator Large
+ * 
+ *          @defgroup nano_api_client_transport_locator_str XRCE Transport Locator String
+ * 
+ *          @defgroup nano_api_client_transport_locator_seq XRCE Transport Locator Sequence
+ *      @} *//* nano_api_client_transport_locator *//*e
+ * 
+ *      @defgroup nano_api_client_transport_listener    XRCE Client Transport Listener
+ * 
+ *      @defgroup nano_api_client_transport_props       XRCE Client Transport Properties
+ * 
+ *      @defgroup nano_api_client_transport_transport   XRCE Client Transport
+ * 
+ * @} *//* nano_api_client_transport *//*e
+ *
+ * @defgroup nano_api_cdr         XCDR Data Format
+ * @addtogroup nano_api_cdr
+ * @{
+ *      @defgroup nano_api_cdr_stream       CDR Stream
+ *
+ *      @defgroup nano_api_cdr_support      CDR Support Types
+ *
+ *      @defgroup nano_api_cdr_serhelp      Serialization Helpers
+ *
+ * @}
+ *
+ * @defgroup nano_api_platform Platform Abstraction Layer
+ * @addtogroup nano_api_platform
+ * @{ 
+ *      @defgroup nano_api_platform_cc    Compiler Abstractions
+ *      @addtogroup nano_api_platform_cc
+ *      @{ 
+ *          @defgroup nano_api_platform_cc_prim     Primitive Types
+ *
+ *      @} *//* nano_api_platform_cc *//*e
+ * 
+ *      @defgroup nano_api_platform_sys    System Abstractions
+ *      @addtogroup nano_api_platform_sys
+ *      @{ 
+ *          @defgroup nano_api_platform_sys_str     Strings
+ * 
+ *          @defgroup nano_api_platform_sys_mem     Memory
+ * 
+ *          @defgroup nano_api_platform_sys_clock   System Clock
+ *
+ *      @} *//* nano_api_platform_sys *//*e
+ * 
+ *      @defgroup nano_api_platform_net     Network Abstractions
+ *      @addtogroup nano_api_platform_net
+ *      @{ 
+ *          @defgroup nano_api_platform_net_udp         UDP Sockets
+ * 
+ *      @} *//* nano_api_platform_net *//*e
+ * 
+ *      @defgroup nano_api_platform_serial  Serial Abstractions
+ *      @addtogroup nano_api_platform_serial
+ *      @{
+ *          @defgroup nano_api_platform_serial_conn     Serial Connection
+ *      @} *//* nano_api_platform_serial *//*e
+ * 
+ * @} *//* nano_api_platform *//*e
+ * 
+ * @defgroup nano_api_platimpl Supported Platforms
+ * @addtogroup nano_api_platimpl
+ * @{ 
+ *      @defgroup nano_api_platimpl_id      Platform Identifiers
+ * 
+ *      @defgroup nano_api_platimpl_cc      Compiler Abstractions
+ *      @addtogroup nano_api_platimpl_cc
+ *      @{ 
+ *          @defgroup nano_api_platimpl_cc_stdc    Standard C Compilers
+ *
+ *      @} *//* nano_api_platimpl_cc *//*e
+ *
+ *      @defgroup nano_api_platimpl_sys     System API
+ *      @addtogroup nano_api_platimpl_sys
+ *      @{ 
+ *          @defgroup nano_api_platimpl_sys_posix   Posix
+ * 
+ *          @defgroup nano_api_platimpl_sys_arduino Arduino
+ *      @} *//* nano_api_platimpl_sys *//*e
+ * 
+ *      @defgroup nano_api_platimpl_net     Network API
+ *      @addtogroup nano_api_platimpl_net
+ *      @{ 
+ *          @defgroup nano_api_platimpl_net_bsd         BSD Sockets
+ * 
+ *          @defgroup nano_api_platform_net_lwip        LwIP
+ *      @} *//* nano_api_platimpl_net *//*e
+ * 
+ *      @defgroup nano_api_platimpl_serial  Serial API
+ *      @addtogroup nano_api_platimpl_serial
+ *      @{ 
+ *          @defgroup nano_api_platimpl_serial_std      Standard Terminal Interface
+ * 
+ *          @defgroup nano_api_platimpl_serial_arduino  Arduino
+ *      @} *//* nano_api_platimpl_serial *//*e
+ * @} *//* nano_api_platimpl *//*e
+ * 
+ * @defgroup nano_api_infr Infrastructure
+ * @addtogroup nano_api_infr
+ * @{ 
+ *      @defgroup nano_api_infr_rc      Return Codes
+ * 
+ *      @defgroup nano_api_infr_mbuf    Message Buffer
+ * 
+ *      @defgroup nano_api_infr_ipv4    IPv4 Support
+ *
+ *      @defgroup nano_api_infr_time    Time
+ * 
+ *      @defgroup nano_api_infr_memory  Memory Helpers
+ *
+ * @} *//* nano_api_infr *//*e
+ * 
+ * @defgroup nano_api_libcfg Library Configuration
+ * @addtogroup nano_api_libcfg
+ * @{
+ *      @defgroup nano_api_libcfg_headers Customizable Header Files
+ *
+ *      @defgroup nano_api_libcfg_core Core Features
+ * 
+ *      @defgroup nano_api_libcfg_client Client Features
+ * @}
+ * 
+ * 
+ * @} *//* nano_api */

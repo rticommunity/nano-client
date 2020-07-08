@@ -1,0 +1,54 @@
+
+mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
+@lib_prefix@_DIR := $(patsubst %/,%,$(dir $(mkfile_path)))
+
+@lib_prefix@_SRC = \
+    @lib_sources@
+
+@lib_prefix@_INC = \
+    @lib_include_priv@
+
+@lib_prefix@_INC_PUB = \
+    @lib_include_pub@
+
+@lib_prefix@_DEFINES = \
+    @lib_defines@
+
+@lib_prefix@_LIBS = \
+    @lib_linked_libs@
+
+@lib_prefix@_SRC_FILES = \
+    $(@lib_prefix@_SRC:%=$(@lib_prefix@_DIR)/%)
+
+@lib_prefix@_INC_FILES = \
+    $(@lib_prefix@_INC:%=$(@lib_prefix@_DIR)/%)
+
+@lib_prefix@_INC_PUB_FILES = \
+    $(@lib_prefix@_INC_PUB:%=$(@lib_prefix@_DIR)/include/%)
+
+@lib_prefix@_SOURCE_FILES = \
+    $(@lib_prefix@_SRC_FILES) \
+    $(@lib_prefix@_INC_FILES)
+
+@lib_prefix@_INC_DIRS = \
+    $(@lib_prefix@_DIR)/include
+
+@prj_prefix@_@lib_name@_NAME = nano@lib_name@
+@prj_prefix@_@lib_name@_DIR = $(@lib_prefix@_DIR)
+@prj_prefix@_@lib_name@_SRC = $(@lib_prefix@_SRC)
+@prj_prefix@_@lib_name@_INC = $(@lib_prefix@_INC)
+@prj_prefix@_@lib_name@_INC_PUB = $(@lib_prefix@_INC_PUB)
+@prj_prefix@_@lib_name@_DEFINES = $(@lib_prefix@_DEFINES)
+@prj_prefix@_@lib_name@_LIBS = $(@lib_prefix@_LIBS)
+@prj_prefix@_@lib_name@_SRC_FILES = $(@lib_prefix@_SRC_FILES)
+@prj_prefix@_@lib_name@_INC_FILES = $(@lib_prefix@_INC_FILES)
+@prj_prefix@_@lib_name@_INC_PUB_FILES = $(@lib_prefix@_INC_PUB_FILES)
+@prj_prefix@_@lib_name@_SOURCE_FILES = $(@lib_prefix@_SOURCE_FILES)
+
+.PHONY: @prj_name@-@lib_name@
+
+@prj_name@-@lib_name@: \
+    $(@prj_prefix@_@lib_name@_SRC_FILES) \
+    $(@prj_prefix@_@lib_name@_INC_FILES) \
+    $(@prj_prefix@_@lib_name@_INC_PUB_FILES) \
+    @prj_prefix@_@lib_name@-info
