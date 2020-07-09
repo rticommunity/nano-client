@@ -53,7 +53,7 @@ directories, or it can be automatically copied by the `make`-based generation
 script.
 
 For example, on Linux, where the Sketchbook directory defaults to ``~/Arduino``,
-the following command will install library ``RTI_Nano`` in
+the following command will install library ``nano-client-arduino`` in
 ``~/Arduino/libraries``:
 
 .. code-block:: sh
