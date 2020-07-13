@@ -449,7 +449,20 @@ function(nano_project_load_connextdds)
     if (NOT EXISTS ${CONNEXTDDS_DIR})
         message(FATAL_ERROR "Invalid CONNEXTDDS_DIR: '${CONNEXTDDS_DIR}'")
     endif()
-
+    if (NOT DEFINED CONNEXTDDS_ARCH AND
+       NOT "$ENV{CONNEXTDDS_ARCH}" STREQUAL "")
+        set(CONNEXTDDS_ARCH         "$ENV{CONNEXTDDS_ARCH}")
+    endif()
+    # On Darwin, FindRTIConnextDDS.cmake has a bug which prevents it from
+    # detecting CONNEXTDDS_ARCH. Print a warning if no CONNEXTDDS_ARCH was
+    # specified by the user.
+    if ("${CONNEXTDDS_ARCH}" STREQUAL "" AND APPLE)
+        message(WARNING "No CONNEXTDDS_ARCH specified. "
+            "You may have to set this variable to your target architecture if "
+            "FindRTIConnextDDS.cmake reports error: "
+            "\"string sub-command REGEX, mode REPLACE needs at least 6 "
+            "arguments total to command\".")
+    endif()
     if (NOT DEFINED CONNEXTDDS_VERSION)
         set(CONNEXTDDS_VERSION              "6.0.0")
     endif()
@@ -458,6 +471,12 @@ function(nano_project_load_connextdds)
 
     find_package(RTIConnextDDS  "${CONNEXTDDS_VERSION}"
         REQUIRED COMPONENTS     core)
+    
+    if (NOT RTIConnextDDS_FOUND)
+        message(FATAL_ERROR "Failed to load RTI Connext DDS libraries")
+    else()
+        message(STATUS "Loaded RTI Connext DDS libraries")
+    endif()
 endfunction()
 
 ################################################################################
