@@ -31,6 +31,11 @@ include(../../core/resource/cmake/nano-build.cmake)
 
 nano_project()
 
+# Enable C++11 for the project
+set(CMAKE_CXX_STANDARD          11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS        OFF)
+
 ################################################################################
 
 nano_project_option(
