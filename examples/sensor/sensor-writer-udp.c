@@ -45,7 +45,7 @@
 
 #define AGENT_ADDRESS           { 127, 0, 0, 1 }
 
-#define CLIENT_KEY              0x01020304
+#define CLIENT_KEY              0x05060708
 
 #define WRITER_ID               0x4065
 
