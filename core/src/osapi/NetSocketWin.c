@@ -284,23 +284,11 @@ NANO_OSAPI_WinUdpv4Socket_open(
     }
 #endif /* NANO_FEAT_AGENT */
 
-    
-    
-    if (properties->timeout_us > 0) 
+    if (properties->timeout_ms > 0) 
     {
-        int timeout_msec = 1 /* round up to at least 1ms */;
-
-        if (properties->timeout_us > (1000 * timeout_msec))
-        {
-            int timeout_sec = 0;
-            timeout_sec = properties->timeout_us / 1000000;
-            timeout_msec = 
-                (timeout_sec * 1000) + 
-                ((properties->timeout_us - (timeout_sec * 1000000)) / 1000);
-        }
+        int timeout_msec = properties->timeout_ms;
         
         NANO_LOG_INFO("SOCKET TIMEOUT",
-            NANO_LOG_U32("timeout.usec",properties->timeout_us)
             NANO_LOG_U32("timeout.msec",timeout_msec))
         
         if ((rci =

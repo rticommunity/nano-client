@@ -1115,6 +1115,274 @@ typedef struct NANODllExport NANO_MessageBufferQueueI
 /** @} *//* nano_api_infr_mbuf */
 
 /******************************************************************************
+ *                            Time Representation
+ ******************************************************************************/
+
+/**
+ * @addtogroup nano_api_infr_time
+ * @{
+ */
+
+/*e
+ * @brief TODO
+ * 
+ */
+typedef NANO_i32 NANO_Timeout;
+
+/*e
+ * @brief TODO
+ * 
+ */
+#define NANO_TIMEOUT_INFINITE           (-1)
+
+#if NANO_FEAT_TIME
+/*e
+ * @brief A type to represent time-stamps and time durations.
+ * 
+ * Time is represented as a "seconds" component and a fractional, "nanoseconds"
+ * one. The "nanoseconds" part should always be less than 1s.
+ */
+typedef struct NANODllExport NANO_TimeI {
+    /**
+     * @brief TODO
+     * 
+     */
+    NANO_i32    sec;
+    /**
+     * @brief TODO
+     * 
+     */
+    NANO_u32    nanosec;
+
+#if NANO_CPP
+
+    NANO_TimeI()
+    : sec(0),
+      nanosec(0)
+    {}
+
+    NANO_TimeI(const NANO_i32 sec, const NANO_u32 nanosec)
+    : sec(sec),
+      nanosec(nanosec)
+    {}
+
+#endif /* NANO_CPP */
+} NANO_Time;
+
+#define NANO_TIME_SERIALIZED_SIZE_MAX \
+    (sizeof(NANO_i32) + \
+        sizeof(NANO_u32))
+
+/*i
+ * @brief Constant defining the number of nanoseconds in a second.
+ * 
+ * Used for conversion purposes.
+ */
+#define NANO_NSEC_IN_SEC        ((NANO_u32)1000000000)
+
+/*i
+ * @brief Constant defining the number of milliseconds in a second.
+ * 
+ * Used for conversion purposes.
+ */
+#define NANO_MILLIS_IN_SEC      ((NANO_u64)1000)
+
+
+/*i
+ * @brief Constant defining the maximum number of milliseconds that can
+ * be represented by a NANO_Time instance.
+ */
+#define NANO_MILLIS_MAX         ((NANO_u64)2147483648000)
+
+/*i
+ * @brief Constant defining the number of nanoseconds in a millisecond.
+ * 
+ * Used for conversion purposes.
+ */
+#define NANO_NSEC_IN_MILLIS \
+    (((NANO_u64)NANO_NSEC_IN_SEC)/NANO_MILLIS_IN_SEC)
+
+/*e
+ * @brief A macro that can be used to initialize static values of NANO_Time.
+ */
+#define NANO_TIME_INITIALIZER   { 0, 0 }
+
+/*e
+ * @brief TODO
+ * 
+ */
+#define NANO_TIME_INITIALIZER_INFINITE   { -1, 0 }
+
+/*e
+ * @brief Initialize a NANO_Time and make sure it is normalized.
+ * 
+ * @param self the instance to initialize.
+ * @param sec the "seconds" component of the new instance.
+ * @param nanosec the "nanoseconds" component of the new instance.
+ * @return NANO_RETCODE_OK if the instance was initialized successfully, 
+ * an error code from NANO_Time_normalize otherwise.
+ */
+NANODllExport
+NANO_RetCode
+NANO_Time_initialize(
+    NANO_Time *const self,
+    const NANO_i32 sec,
+    const NANO_u32 nanosec);
+
+/*i
+ * @brief Compare a NANO_Time instance with another
+ * 
+ * All "infinte" instances are considered equal and greater than any "finite"
+ * ones.
+ * 
+ * @param self the instance to check.
+ * @param other the instance to compare.
+ * @return 0 if the two instances are equal, a positive value if self is greater
+ * than other, and a negative value otherwise.
+ */
+NANO_i8
+NANO_Time_compare(const NANO_Time *const self, const NANO_Time *const other);
+
+#define NANO_Time_compare(s_,o_) \
+    ((NANO_Time_is_infinite((s_)))? \
+        ((NANO_Time_is_infinite((o_)))? \
+            /* both infinite */ 0 : /* s infinite, o finite */ 1 ) : \
+        ((NANO_Time_is_infinite((o_)))? \
+            /* s finite, o infinite */ -1 : \
+            /* both finite */ \
+            (((s_)->sec > (o_)->sec)? \
+                /* s > o */ 1 : \
+                (((s_)->sec < (o_)->sec)? \
+                    /* s < o */ -1 : \
+                    /* s.sec == o.sec */ \
+                    (((s_)->nanosec > (o_)->nanosec)? \
+                        /* s > o */ 1 : \
+                        (((s_)->nanosec < (o_)->nanosec)? \
+                            /* s < o */ -1 : \
+                            /* s.nanosec == o.nanosec */ 0 \
+                            ) \
+                        ) \
+                    ) \
+                ) \
+            ) \
+        )
+
+/*i
+ * @brief Check if a NANO_Time instance is equal to another
+ * 
+ * Comparison is performed according to the semantics defined by
+ * NANO_Time_compare.
+ * 
+ * @param self the instance to check.
+ * @param other the instance to compare.
+ * @return NANO_TRUE is the instances are equal, NANO_FALSE otherwise.
+ */
+NANODllExport
+NANO_bool
+NANO_Time_is_equal(const NANO_Time *const self, const NANO_Time *const other);
+
+#define NANO_Time_is_equal(s_,o_) \
+    (0 == NANO_Time_compare((s_),(o_)))
+
+/*i
+ * @brief Check if a NANO_Time instance is normalized.
+ * 
+ * @param self the instance to check.
+ * @return NANO_TRUE is the instance is normalized, NANO_FALSE otherwise.
+ */
+NANO_bool
+NANO_Time_is_normalized(const NANO_Time *const self);
+
+#define NANO_Time_is_normalized(t_) \
+    ((NANO_Time_is_infinite((t_)))? \
+        ((t_)->sec == -1 && \
+            (t_)->nanosec == 0) : \
+        ((t_)->nanosec / NANO_NSEC_IN_SEC) == 0)
+
+/*e
+ * @brief Check if a NANO_Time instance is infinite
+ * 
+ * @param self the instance to check.
+ * @return NANO_TRUE is the instance is infinite, NANO_FALSE otherwise.
+ */
+NANO_bool
+NANO_Time_is_infinite(const NANO_Time *const self);
+
+#define NANO_Time_is_infinite(t_) \
+    ((t_)->sec < 0)
+
+/*e
+ * @brief Check if a NANO_Time instance is zero
+ * 
+ * @param self the instance to check.
+ * @return NANO_TRUE is the instance is zero, NANO_FALSE otherwise.
+ */
+NANO_bool
+NANO_Time_is_zero(const NANO_Time *const self);
+
+#define NANO_Time_is_zero(t_) \
+    (((t_)->sec == 0) && ((t_)->nanosec == 0))
+
+/*e
+ * @brief Generate a normalized version of a NANO_Time instance.
+ * 
+ * The source and destination instances must not be the same.
+ * 
+ * @param self  The instance to normalize.
+ * @param norm_t_out  A normalized representation of the input instance.
+ * @return NANO_RETCODE_OK if the instance was successfully normalized,
+ * NANO_RETCODE_OVERFLOW_DETECTED if an overflow occurred.
+ */
+NANODllExport
+NANO_RetCode
+NANO_Time_normalize(const NANO_Time *const self, NANO_Time *const norm_t_out);
+
+/*e
+ * @brief Convert a NANO_Time instance to a seconds representation.
+ * 
+ * The returned value will be rounded up if the instance has a "nanoseconds"
+ * component.
+ * 
+ * The instance must contain a "finite" time.
+ * 
+ * @param self The instance to convert.
+ * @param sec_out The instance's time in seconds (rounded up)
+ * @return NANO_RETCODE_OK if the instance was successfully converted,
+ * NANO_PRECONDITION_NOT_MET if the instance does not contain a finite time.
+ */
+NANODllExport
+NANO_RetCode
+NANO_Time_to_sec(const NANO_Time *const self, NANO_u32 *const sec_out);
+
+/*e
+ * @brief Convert a NANO_Time instance to a milliseconds representation.
+ * 
+ * The returned value will be rounded up if the instance has a "nanoseconds"
+ * component.
+ * 
+ * The instance must contain a "finite" time.
+ * 
+ * @param self The instance to convert.
+ * @param millis_out The instance's time in seconds (rounded up)
+ */
+NANODllExport
+void
+NANO_Time_to_millis(const NANO_Time *const self, NANO_u64 *const millis_out);
+
+void
+NANO_Time_from_millis(const NANO_Time *const self, NANO_u64 millis);
+
+#define NANO_Time_from_millis(s_,m_) \
+{\
+    (s_)->sec = (m_) / 1000;\
+    (s_)->nanosec = ((m_) - ((s_)->sec * 1000)) * 1000000;\
+}
+
+#endif /* NANO_FEAT_TIME */
+
+/** @} *//* nano_api_infr_time */
+
+/******************************************************************************
  *                     OS-independent Network API
  ******************************************************************************/
 /**
@@ -1765,275 +2033,6 @@ NANO_OSAPI_Memory_aligned(const NANO_u8 *ptr, NANO_u8 alignment);
 
 
 /** @} *//* nano_api_infr_memory */
-
-/******************************************************************************
- *                            Time Representation
- ******************************************************************************/
-
-/**
- * @addtogroup nano_api_infr_time
- * @{
- */
-
-/*e
- * @brief TODO
- * 
- */
-typedef NANO_i32 NANO_Timeout;
-
-/*e
- * @brief TODO
- * 
- */
-#define NANO_TIMEOUT_INFINITE           (-1)
-
-#if NANO_FEAT_TIME
-/*e
- * @brief A type to represent time-stamps and time durations.
- * 
- * Time is represented as a "seconds" component and a fractional, "nanoseconds"
- * one. The "nanoseconds" part should always be less than 1s.
- */
-typedef struct NANODllExport NANO_TimeI {
-    /**
-     * @brief TODO
-     * 
-     */
-    NANO_i32    sec;
-    /**
-     * @brief TODO
-     * 
-     */
-    NANO_u32    nanosec;
-
-#if NANO_CPP
-
-    NANO_TimeI()
-    : sec(0),
-      nanosec(0)
-    {}
-
-    NANO_TimeI(const NANO_i32 sec, const NANO_u32 nanosec)
-    : sec(sec),
-      nanosec(nanosec)
-    {}
-
-#endif /* NANO_CPP */
-} NANO_Time;
-
-#define NANO_TIME_SERIALIZED_SIZE_MAX \
-    (sizeof(NANO_i32) + \
-        sizeof(NANO_u32))
-
-/*i
- * @brief Constant defining the number of nanoseconds in a second.
- * 
- * Used for conversion purposes.
- */
-#define NANO_NSEC_IN_SEC        ((NANO_u32)1000000000)
-
-/*i
- * @brief Constant defining the number of milliseconds in a second.
- * 
- * Used for conversion purposes.
- */
-#define NANO_MILLIS_IN_SEC      ((NANO_u64)1000)
-
-
-/*i
- * @brief Constant defining the maximum number of milliseconds that can
- * be represented by a NANO_Time instance.
- */
-#define NANO_MILLIS_MAX         ((NANO_u64)2147483648000)
-
-/*i
- * @brief Constant defining the number of nanoseconds in a millisecond.
- * 
- * Used for conversion purposes.
- */
-#define NANO_NSEC_IN_MILLIS \
-    (((NANO_u64)NANO_NSEC_IN_SEC)/NANO_MILLIS_IN_SEC)
-
-/*e
- * @brief A macro that can be used to initialize static values of NANO_Time.
- */
-#define NANO_TIME_INITIALIZER   { 0, 0 }
-
-/*e
- * @brief TODO
- * 
- */
-#define NANO_TIME_INITIALIZER_INFINITE   { -1, 0 }
-
-/*e
- * @brief Initialize a NANO_Time and make sure it is normalized.
- * 
- * @param self the instance to initialize.
- * @param sec the "seconds" component of the new instance.
- * @param nanosec the "nanoseconds" component of the new instance.
- * @return NANO_RETCODE_OK if the instance was initialized successfully, 
- * an error code from NANO_Time_normalize otherwise.
- */
-NANODllExport
-NANO_RetCode
-NANO_Time_initialize(
-    NANO_Time *const self,
-    const NANO_i32 sec,
-    const NANO_u32 nanosec);
-
-/*i
- * @brief Compare a NANO_Time instance with another
- * 
- * All "infinte" instances are considered equal and greater than any "finite"
- * ones.
- * 
- * @param self the instance to check.
- * @param other the instance to compare.
- * @return 0 if the two instances are equal, a positive value if self is greater
- * than other, and a negative value otherwise.
- */
-NANO_i8
-NANO_Time_compare(const NANO_Time *const self, const NANO_Time *const other);
-
-#define NANO_Time_compare(s_,o_) \
-    ((NANO_Time_is_infinite((s_)))? \
-        ((NANO_Time_is_infinite((o_)))? \
-            /* both infinite */ 0 : /* s infinite, o finite */ 1 ) : \
-        ((NANO_Time_is_infinite((o_)))? \
-            /* s finite, o infinite */ -1 : \
-            /* both finite */ \
-            (((s_)->sec > (o_)->sec)? \
-                /* s > o */ 1 : \
-                (((s_)->sec < (o_)->sec)? \
-                    /* s < o */ -1 : \
-                    /* s.sec == o.sec */ \
-                    (((s_)->nanosec > (o_)->nanosec)? \
-                        /* s > o */ 1 : \
-                        (((s_)->nanosec < (o_)->nanosec)? \
-                            /* s < o */ -1 : \
-                            /* s.nanosec == o.nanosec */ 0 \
-                            ) \
-                        ) \
-                    ) \
-                ) \
-            ) \
-        )
-
-/*i
- * @brief Check if a NANO_Time instance is equal to another
- * 
- * Comparison is performed according to the semantics defined by
- * NANO_Time_compare.
- * 
- * @param self the instance to check.
- * @param other the instance to compare.
- * @return NANO_TRUE is the instances are equal, NANO_FALSE otherwise.
- */
-NANODllExport
-NANO_bool
-NANO_Time_is_equal(const NANO_Time *const self, const NANO_Time *const other);
-
-#define NANO_Time_is_equal(s_,o_) \
-    (0 == NANO_Time_compare((s_),(o_)))
-
-/*i
- * @brief Check if a NANO_Time instance is normalized.
- * 
- * @param self the instance to check.
- * @return NANO_TRUE is the instance is normalized, NANO_FALSE otherwise.
- */
-NANO_bool
-NANO_Time_is_normalized(const NANO_Time *const self);
-
-#define NANO_Time_is_normalized(t_) \
-    ((NANO_Time_is_infinite((t_)))? \
-        ((t_)->sec == -1 && \
-            (t_)->nanosec == 0) : \
-        ((t_)->nanosec / NANO_NSEC_IN_SEC) == 0)
-
-/*e
- * @brief Check if a NANO_Time instance is infinite
- * 
- * @param self the instance to check.
- * @return NANO_TRUE is the instance is infinite, NANO_FALSE otherwise.
- */
-NANO_bool
-NANO_Time_is_infinite(const NANO_Time *const self);
-
-#define NANO_Time_is_infinite(t_) \
-    ((t_)->sec < 0)
-
-/*e
- * @brief Check if a NANO_Time instance is zero
- * 
- * @param self the instance to check.
- * @return NANO_TRUE is the instance is zero, NANO_FALSE otherwise.
- */
-NANO_bool
-NANO_Time_is_zero(const NANO_Time *const self);
-
-#define NANO_Time_is_zero(t_) \
-    (((t_)->sec == 0) && ((t_)->nanosec == 0))
-
-/*e
- * @brief Generate a normalized version of a NANO_Time instance.
- * 
- * The source and destination instances must not be the same.
- * 
- * @param self  The instance to normalize.
- * @param norm_t_out  A normalized representation of the input instance.
- * @return NANO_RETCODE_OK if the instance was successfully normalized,
- * NANO_RETCODE_OVERFLOW_DETECTED if an overflow occurred.
- */
-NANODllExport
-NANO_RetCode
-NANO_Time_normalize(const NANO_Time *const self, NANO_Time *const norm_t_out);
-
-/*e
- * @brief Convert a NANO_Time instance to a seconds representation.
- * 
- * The returned value will be rounded up if the instance has a "nanoseconds"
- * component.
- * 
- * The instance must contain a "finite" time.
- * 
- * @param self The instance to convert.
- * @param sec_out The instance's time in seconds (rounded up)
- * @return NANO_RETCODE_OK if the instance was successfully converted,
- * NANO_PRECONDITION_NOT_MET if the instance does not contain a finite time.
- */
-NANODllExport
-NANO_RetCode
-NANO_Time_to_sec(const NANO_Time *const self, NANO_u32 *const sec_out);
-
-/*e
- * @brief Convert a NANO_Time instance to a milliseconds representation.
- * 
- * The returned value will be rounded up if the instance has a "nanoseconds"
- * component.
- * 
- * The instance must contain a "finite" time.
- * 
- * @param self The instance to convert.
- * @param millis_out The instance's time in seconds (rounded up)
- */
-NANODllExport
-void
-NANO_Time_to_millis(const NANO_Time *const self, NANO_u64 *const millis_out);
-
-void
-NANO_Time_from_millis(const NANO_Time *const self, NANO_u64 millis);
-
-#define NANO_Time_from_millis(s_,m_) \
-{\
-    (s_)->sec = (m_) / 1000;\
-    (s_)->nanosec = ((m_) - ((s_)->sec * 1000)) * 1000000;\
-}
-
-#endif /* NANO_FEAT_TIME */
-
-/** @} *//* nano_api_infr_time */
-
 
 /******************************************************************************
  *                                  Sequence

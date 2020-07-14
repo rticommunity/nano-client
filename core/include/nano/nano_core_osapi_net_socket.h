@@ -107,7 +107,7 @@ typedef struct NANODllExport NANO_OSAPI_BsdSocketPropertiesI
     NANO_usize recv_buffer_size;
     NANO_usize send_buffer_size;
     NANO_SocketFlags flags;
-    NANO_u64 timeout_us;
+    NANO_Timeout timeout_ms;
 
 #if NANO_CPP
     NANO_OSAPI_BsdSocketPropertiesI()
@@ -115,7 +115,7 @@ typedef struct NANODllExport NANO_OSAPI_BsdSocketPropertiesI
         this->flags = NANO_SOCKETFLAGS_DEFAULT;
         this->recv_buffer_size = 0;
         this->send_buffer_size = 0;
-        this->timeout_us = NANO_LIMIT_SOCKET_RECV_TIMEOUT_MS;
+        this->timeout_ms = (NANO_LIMIT_SOCKET_RECV_TIMEOUT_MS * 1000);
     }
 #endif /* NANO_CPP */
 
@@ -126,7 +126,7 @@ typedef struct NANODllExport NANO_OSAPI_BsdSocketPropertiesI
     0, /* recv_buffer_size */\
     0,  /* send_buffer_size */\
     NANO_SOCKETFLAGS_DEFAULT, /* flags */\
-    NANO_LIMIT_SOCKET_RECV_TIMEOUT_MS /* timeout_us */ \
+    NANO_LIMIT_SOCKET_RECV_TIMEOUT_MS /* timeout_ms */ \
 }
 
 #define NANO_OSAPI_Udpv4SocketProperties_set_multicast(s_) \

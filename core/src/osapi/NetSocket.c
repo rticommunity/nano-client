@@ -351,16 +351,16 @@ NANO_OSAPI_BsdUdpv4Socket_open(
     }
 #endif /* NANO_FEAT_AGENT */
 
-    if (properties->timeout_us > 0) 
+    if (properties->timeout_ms > 0) 
     {
         struct timeval timeout_tv;
 
-        timeout_tv.tv_sec = properties->timeout_us / 1000000;
+        timeout_tv.tv_sec = properties->timeout_ms / 1000;
         timeout_tv.tv_usec =
-            (properties->timeout_us - (timeout_tv.tv_sec * 1000000));
+            (properties->timeout_ms - (timeout_tv.tv_sec * 1000)) * 1000;
         
         NANO_LOG_INFO("SOCKET TIMEOUT",
-            NANO_LOG_U32("timeout.usec",properties->timeout_us)
+            NANO_LOG_U32("timeout_ms",properties->timeout_ms)
             NANO_LOG_U32("tv.sec",timeout_tv.tv_sec)
             NANO_LOG_U32("tv.usec",timeout_tv.tv_usec))
         

@@ -89,13 +89,13 @@ typedef struct NANODllExport NANO_OSAPI_WinSocketI
 typedef struct NANODllExport NANO_OSAPI_WinSocketPropertiesI
 {
     NANO_SocketFlags flags;
-    NANO_u64 timeout_us;
+    NANO_u64 timeout_ms;
 
 #if NANO_CPP
     NANO_OSAPI_WinSocketPropertiesI()
     {
         this->flags = NANO_SOCKETFLAGS_DEFAULT;
-        this->timeout_us = NANO_LIMIT_SOCKET_RECV_TIMEOUT_MS;
+        this->timeout_ms = NANO_LIMIT_SOCKET_RECV_TIMEOUT_MS;
     }
 #endif /* NANO_CPP */
 
@@ -104,7 +104,7 @@ typedef struct NANODllExport NANO_OSAPI_WinSocketPropertiesI
 #define NANO_OSAPI_WINSOCKETPROPERTIES_INITIALIZER \
 {\
     NANO_SOCKETFLAGS_DEFAULT, /* flags */\
-    NANO_LIMIT_SOCKET_RECV_TIMEOUT_MS /* timeout_us */ \
+    NANO_LIMIT_SOCKET_RECV_TIMEOUT_MS /* timeout_ms */ \
 }
 
 #define NANO_OSAPI_Udpv4SocketProperties_set_multicast(s_) \
