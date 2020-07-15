@@ -43,9 +43,11 @@
 #endif
 #endif
 
+#define SENSOR_ID               0x00000001
+
 #define AGENT_ADDRESS           { 127, 0, 0, 1 }
 
-#define CLIENT_KEY              0x05060708
+#define CLIENT_KEY              0x01020304
 
 #define WRITER_ID               0x4065
 
@@ -117,8 +119,8 @@ int main(int argc, char const *argv[])
         }
     } while (!NANO_XRCE_Client_connected(client));
 
-    /* Set data.id with the big endian value of CLIENT_KEY */
-    NANO_u32_serialize(CLIENT_KEY, data.id, NANO_BOOL_FALSE);
+    /* Set data.id with the big endian value of SENSOR_ID */
+    NANO_u32_serialize(SENSOR_ID, data.id, NANO_BOOL_FALSE);
 
     while (MAX_SAMPLES <= 0 || published_samples < MAX_SAMPLES)
     {

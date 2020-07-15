@@ -31,7 +31,7 @@
 #define AGENT_ADDRESS           { 127, 0, 0, 1 }
 #define BIND_PORT               7403
 
-#define CLIENT_KEY              0x01020304
+#define CLIENT_KEY              0x05060708
 
 #define READER_ID               0x5BB6
 

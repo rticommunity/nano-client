@@ -20,12 +20,13 @@
  Start nanoagentd with the following command (change paths and other arguments
  according to your environment):
  
-   nanoagentd -U -c RTI_Nano/extras/sensor_agent.xml
+   nanoagentd -U -c nano-client-arduino/extras/sensor_agent.xml
  
  ******************************************************************************/
 
 #include <nano_client_arduino.h>
 
+#define SENSOR_ID           0x00000001
 #define CLIENT_KEY          0x01020304
 #define BASE_OBJECT_ID      0x0010
 #define TRANSPORT_MTU       128
@@ -63,6 +64,9 @@ struct SensorData
 
 SensorData data;
 
+/**
+ * Initialize Serial port for debugging messages
+ */
 void serial_init()
 {
   Serial.begin(SERIAL_SPEED);
@@ -77,9 +81,12 @@ void serial_init()
 #elif defined(ESP32)
 #include <WiFi.h>
 #else
-#error "unsupported target platform"
+#include <WiFi.h>
 #endif
 
+/**
+ * Connect to a WiFi network
+ */
 void wifi_connect()
 {
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -90,6 +97,46 @@ void wifi_connect()
     }
 }
 
+/**
+ * Initialize local XRCE client and connect to a remote XRCE agent.
+ */
+bool xrce_connect()
+{
+    if (!client.initialize())
+    {
+      Serial.println("Failed to initialize XRCE client");
+      return false;
+    }
+    
+    while (!client.connected())
+    {
+      Serial.println("Connecting to XRCE agent...");
+      client.connect(INIT_DELAY);
+    }
+    
+    /* Attach XRCE objects to client session */
+    if (!participant.create())
+    {
+        Serial.println("Failed to create DomainParticipant");
+        return false;
+    }
+    if (!publisher.create())
+    {
+        Serial.println("Failed to create Publisher");
+        return false;
+    }
+
+    if (!writer.create())
+    {
+        Serial.println("Failed to create DataWriter");
+        return false;
+    }
+
+    Serial.println("Connected to XRCE agent");
+    return true;
+}
+
+
 void setup()
 {
     /* Initialize serial port */
@@ -99,17 +146,15 @@ void setup()
     wifi_connect();
 
     /* Initialize XRCE client and connect to XRCE agent */
-    client.connect();
-
-    /* Attach XRCE objects to client session */
-    participant.create();
-    publisher.create();
-    writer.create();
+    if (!xrce_connect())
+    {
+        while (1) {}
+    }
 
     /* Initialize sensor data */
     data.value = 0;
-    /* Store client key as big endian */
-    NANO_u32_serialize(CLIENT_KEY, data.id, false);
+    /* Store sensor id as big endian */
+    NANO_u32_serialize(SENSOR_ID, data.id, false);
 }
 
 void loop()

@@ -20,12 +20,13 @@
  Start nanoagentd with the following command (change paths and other arguments
  according to your environment):
  
-   nanoagentd -U -c RTI_Nano/extras/sensor_agent.xml
+   nanoagentd -U -a -c nano-client-arduino/extras/sensor_agent.xml
  
  ******************************************************************************/
 
 #include <nano_client_arduino.h>
 
+#define SENSOR_ID           0x00000001
 #define CLIENT_KEY          0x01020304
 #define WRITER_ID           0x4065
 #define TRANSPORT_MTU       128
@@ -58,6 +59,9 @@ struct SensorData
 
 SensorData data;
 
+/**
+ * Initialize Serial port for debugging messages
+ */
 void serial_init()
 {
   Serial.begin(SERIAL_SPEED);
@@ -75,6 +79,9 @@ void serial_init()
 #include <WiFi.h>
 #endif
 
+/**
+ * Connect to a WiFi network
+ */
 void wifi_connect()
 {
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -83,6 +90,27 @@ void wifi_connect()
     while (WiFi.status() != WL_CONNECTED) {
         delay(INIT_DELAY);
     }
+}
+
+/**
+ * Initialize local XRCE client and connect to a remote XRCE agent.
+ */
+bool xrce_connect()
+{
+    if (!client.initialize())
+    {
+      Serial.println("Failed to initialize XRCE client");
+      return false;
+    }
+    
+    while (!client.connected())
+    {
+      Serial.println("Connecting to XRCE agent...");
+      client.connect(INIT_DELAY);
+    }
+
+    Serial.println("Connected to XRCE agent");
+    return true;
 }
 
 void setup()
@@ -94,12 +122,15 @@ void setup()
     wifi_connect();
 
     /* Initialize XRCE client and connect to XRCE agent */
-    client.connect();
+    if (!xrce_connect())
+    {
+        while (1) {};
+    }
 
     /* Initialize sensor data */
     data.value = 0;
-    /* Store client key as big endian */
-    NANO_u32_serialize(CLIENT_KEY, data.id, false);
+    /* Store sensor id as big endian */
+    NANO_u32_serialize(SENSOR_ID, data.id, false);
 }
 
 void loop()

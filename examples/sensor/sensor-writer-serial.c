@@ -43,6 +43,7 @@
 #endif
 #endif
 
+#define SENSOR_ID               0x00000001
 
 #define SERIAL_PORT             "/dev/pts/2"
 #define SERIAL_SPEED            115200
@@ -50,7 +51,7 @@
 #define BIND_ADDR               0xAA
 #define AGENT_ADDR              0xFF
 
-#define CLIENT_KEY              0x05060708
+#define CLIENT_KEY              0x01020304
 
 #define WRITER_ID               0x4065
 

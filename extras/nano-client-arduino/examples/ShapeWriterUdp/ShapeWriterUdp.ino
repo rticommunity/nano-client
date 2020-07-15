@@ -20,7 +20,7 @@
  Start nanoagentd with the following command (change paths and other arguments
  according to your environment):
  
-   nanoagentd -U -c RTI_Nano/extras/shape_agent.xml
+   nanoagentd -U -c nano-client-arduino/extras/shape_agent.xml
  
  ******************************************************************************/
 
@@ -143,6 +143,9 @@ struct Shape
 
 #define Shape_DIMENSION_MAX         255
 
+/**
+ * Serialize a Shape object to a buffer using XCDR format.
+ */
 bool serialize_shape(
     Shape& s,
     XrceData *const buf,
@@ -165,6 +168,9 @@ bool serialize_shape(
     return true;
 }
 
+/**
+ * Print out the value of a Shape object for debugging purposes
+ */
 void print_shape(Shape& s, const char *s_type)
 {
     Serial.print(s_type);
@@ -190,6 +196,10 @@ struct Speed
     }
 };
 
+/**
+ * Move a Shape's coordinate by a certain speed, and possibly "bounce" it
+ * if it reached a "wall".
+ */
 void move_dimension(
     int32_t& cur,
     int32_t& speed,
@@ -217,6 +227,9 @@ void move_dimension(
     }
 }
 
+/**
+ * Move a Shape object by the current speed.
+ */
 void move_shape(
         Shape& shape,
         Speed& speed,
@@ -252,6 +265,9 @@ Shape square(
 
 Speed speed_square(SQUARE_SPEED_X, SQUARE_SPEED_Y);
 
+/**
+ * Initialize Serial port for debugging messages
+ */
 void serial_init()
 {
   Serial.begin(SERIAL_SPEED);
@@ -266,9 +282,12 @@ void serial_init()
 #elif defined(ESP32)
 #include <WiFi.h>
 #else
-#error "unsupported target platform"
+#include <WiFi.h>
 #endif
 
+/**
+ * Connect to a WiFi network
+ */
 void wifi_connect()
 {
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -279,6 +298,34 @@ void wifi_connect()
     }
 }
 
+
+/**
+ * Initialize local XRCE client and connect to a remote XRCE agent.
+ */
+bool xrce_connect()
+{
+    if (!client.initialize())
+    {
+      Serial.println("Failed to initialize XRCE client");
+      return false;
+    }
+
+    /* Enable custom XRCE streams */
+    stream_circle.enable();
+    stream_square.enable();
+    stream_triangle.enable();
+    
+    while (!client.connected())
+    {
+      Serial.println("Connecting to XRCE agent...");
+      client.connect(INIT_DELAY);
+    }
+
+    Serial.println("Connected to XRCE agent");
+    return true;
+}
+
+
 void setup()
 {
     /* Initialize serial port */
@@ -288,13 +335,10 @@ void setup()
     wifi_connect();
 
     /* Initialize XRCE Client and register custom streams */
-    client.initialize();
-    stream_circle.enable();
-    stream_square.enable();
-    stream_triangle.enable();
-
-    /* Initialize XRCE client and connect to XRCE agent */
-    client.connect();
+    if (!xrce_connect())
+    {
+        while (1) {}
+    }
 }
 
 void loop()

@@ -21,16 +21,18 @@
  according to your environment):
  
    nanoagentd -S -Sd /dev/ttyUSB0 -Ss 115200 -St 1000 \
-              -c RTI_Nano/extras/sensor_agent.xml
+              -a -c nano-client-arduino/extras/sensor_agent.xml
  
  ******************************************************************************/
 
 #include <nano_client_arduino.h>
 
+#define SENSOR_ID           0x00000001
 #define CLIENT_KEY          0x01020304
 #define WRITER_ID           0x4065
 #define TRANSPORT_MTU       128
 #define PUBLISH_DELAY       1000
+#define INIT_DELAY          5000
 
 XrceData transport_recv_buffer[
             XRCE_TRANSPORT_RECV_BUFFER_SIZE(TRANSPORT_MTU)] = { 0 };
@@ -53,12 +55,22 @@ SensorData data;
 void setup()
 {
     /* Initialize XRCE client and connect to XRCE agent */
-    client.connect();
+    if (!client.initialize())
+    {
+        // Failed to initialize XRCE client
+        while (1) {}
+    }
+
+    while (!client.connected())
+    {
+        client.connect(INIT_DELAY);
+    }
+
 
     /* Initialize sensor data */
     data.value = 0;
-    /* Store client key as big endian */
-    NANO_u32_serialize(CLIENT_KEY, data.id, false);
+    /* Store sensor id as big endian */
+    NANO_u32_serialize(SENSOR_ID, data.id, false);
 }
 
 void loop()

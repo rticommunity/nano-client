@@ -21,7 +21,7 @@
  according to your environment):
  
    nanoagentd -S -Sd /dev/ttyUSB0 -Ss 115200 -St 1000 \
-              -c RTI_Nano/extras/sensor_agent.xml
+              -a -c nano-client-arduino/extras/sensor_agent.xml
  
  ******************************************************************************/
 
@@ -31,6 +31,7 @@
 #define READER_ID           0x5BB6
 #define TRANSPORT_MTU       128
 #define SERIAL_PORT         1
+#define INIT_DELAY          5000
 
 XrceData transport_recv_buffer[
             XRCE_TRANSPORT_RECV_BUFFER_SIZE(TRANSPORT_MTU)] = { 0 };
@@ -48,7 +49,10 @@ struct SensorData
     uint32_t value;
 };
 
-
+/**
+ * Listener callback used to notify the application of
+ * new XRCE data received by the client.
+ */
 void on_data(
     void *const listener,
     XrceClient& client,
@@ -66,14 +70,27 @@ void on_data(
 
 void setup()
 {
+    if (!client.initialize())
+    {
+        // Failed to initialize XRCE client
+        while (1) {}
+    }
+
     /* Initialize XRCE client and connect to XRCE agent */
-    client.connect();
+    while (!client.connected())
+    {
+        client.connect(INIT_DELAY);
+    }
 
     /* Set callback to be notified of received XRCE data */
     client.on_data_callback(on_data);
 
     /* Request data from agent */
-    reader.read_data();
+    if (!reader.read_data())
+    {
+        // Failed to request data from agent
+        while (1) {}
+    }
 }
 
 void loop()

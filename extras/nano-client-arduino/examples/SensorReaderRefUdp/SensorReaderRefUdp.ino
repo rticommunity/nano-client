@@ -20,7 +20,7 @@
  Start nanoagentd with the following command (change paths and other arguments
  according to your environment):
  
-   nanoagentd -U c RTI_Nano/extras/sensor_agent.xml
+   nanoagentd -U c nano-client-arduino/extras/sensor_agent.xml
  
  ******************************************************************************/
 
@@ -60,6 +60,10 @@ struct SensorData
     uint32_t value;
 };
 
+/**
+ * Listener callback used to notify the application of
+ * new XRCE data received by the client.
+ */
 void on_data(
     void *const listener,
     XrceClient& client,
@@ -81,7 +85,9 @@ void on_data(
     Serial.println(data.value);
 }
 
-
+/**
+ * Initialize Serial port for debugging messages
+ */
 void serial_init()
 {
   Serial.begin(SERIAL_SPEED);
@@ -96,9 +102,13 @@ void serial_init()
 #elif defined(ESP32)
 #include <WiFi.h>
 #else
-#error "unsupported target platform"
+#include <WiFi.h>
 #endif
 
+
+/**
+ * Connect to a WiFi network
+ */
 void wifi_connect()
 {
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -109,6 +119,58 @@ void wifi_connect()
     }
 }
 
+
+/**
+ * Initialize local XRCE client and connect to a remote XRCE agent.
+ */
+bool xrce_connect()
+{
+    if (!client.initialize())
+    {
+      Serial.println("Failed to initialize XRCE client");
+      return false;
+    }
+    
+    while (!client.connected())
+    {
+      Serial.println("Connecting to XRCE agent...");
+      client.connect(INIT_DELAY);
+    }
+
+    /* Set callback to be notified of received XRCE data */
+    client.on_data_callback(on_data);
+
+    /* Attach XRCE objects to client session */
+    if (!participant.create())
+    {
+        Serial.println("Failed to register DomainParticipant");
+        return false;
+    }
+
+    if (!subscriber.create())
+    {
+        Serial.println("Failed to register Subscriber");
+        return false;
+    }
+
+    if (!reader.create())
+    {
+        Serial.println("Failed to register DataReader");
+        return false;
+    }
+
+    /* Request samples from agent */
+    if (!reader.read_data())
+    {
+        Serial.println("Failed to request data from agent");
+        return false;
+    }
+
+    Serial.println("Connected to XRCE agent");
+    return true;
+}
+
+
 void setup()
 {
     /* Initialize serial port */
@@ -118,16 +180,10 @@ void setup()
     wifi_connect();
 
     /* Initialize XRCE client and connect to XRCE agent */
-    client.connect();
-
-    /* Set callback to be notified of received XRCE data */
-    client.on_data_callback(on_data);
-
-    /* Attach XRCE objects to client session */
-    participant.create();
-    subscriber.create();
-    reader.create();
-
+    if (!xrce_connect())
+    {
+        while (1) {}
+    }
     /* Request samples from agent */
     reader.read_data();
 }

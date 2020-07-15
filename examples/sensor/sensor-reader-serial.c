@@ -35,7 +35,7 @@
 #define BIND_ADDR               0xAA
 #define AGENT_ADDR              0xFF
 
-#define CLIENT_KEY              0x01020304
+#define CLIENT_KEY              0x05060708
 
 #define READER_ID               0x5BB6
 
