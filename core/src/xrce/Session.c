@@ -4006,10 +4006,7 @@ NANO_XRCE_Session_run_until_ackedI(
                     NANO_MessageBufferQueue_size(&stream->send_queue)))
             
             NANO_CHECK_RC(
-                NANO_XRCE_Session_run(
-                    self,
-                    (timeout_remaining > 0)? 1 : 0,
-                    timeout_remaining),
+                NANO_XRCE_Session_run(self, 1, timeout_remaining),
                 NANO_LOG_ERROR("FAILED to run session",
                     NANO_LOG_KEY("key", self->key)
                     NANO_LOG_SESSIONID("session", self->id)

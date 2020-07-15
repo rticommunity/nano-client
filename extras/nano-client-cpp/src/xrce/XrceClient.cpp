@@ -18,6 +18,8 @@
 
 #include <nano/nano_client_client.hpp>
 
+#include <string.h>
+
 using namespace rti::nano::xrce;
 
 ReceivedData::ReceivedData(
@@ -511,6 +513,9 @@ bool Client::create_object(
         args.repr_fmt = NANO_XRCE_REPRESENTATION_BY_REFERENCE;
     }
 
+    args.repr = (const NANO_u8*) representation;
+    args.repr_len = strlen(representation);
+
     args.obj_kind = obj_kind;
 
     switch (obj_kind)
@@ -524,36 +529,36 @@ bool Client::create_object(
     }
     case NANO_XRCE_OBJK_TOPIC:
     {
-        args.tail_data = (NANO_u8*)&parent_id;
-        args.tail_data_len = sizeof(parent_id);
+        args.tail_data = (NANO_u8*)parent_id;
+        args.tail_data_len = sizeof(ObjectId);
         args.tail_data_align = NANO_XRCE_ObjectId_alignment;
         break;
     }
     case NANO_XRCE_OBJK_PUBLISHER:
     {
-        args.tail_data = (NANO_u8*)&parent_id;
-        args.tail_data_len = sizeof(parent_id);
+        args.tail_data = (NANO_u8*)parent_id;
+        args.tail_data_len = sizeof(ObjectId);
         args.tail_data_align = NANO_XRCE_ObjectId_alignment;
         break;
     }
     case NANO_XRCE_OBJK_SUBSCRIBER:
     {
-        args.tail_data = (NANO_u8*)&parent_id;
-        args.tail_data_len = sizeof(parent_id);
+        args.tail_data = (NANO_u8*)parent_id;
+        args.tail_data_len = sizeof(ObjectId);
         args.tail_data_align = NANO_XRCE_ObjectId_alignment;
         break;
     }
     case NANO_XRCE_OBJK_DATAWRITER:
     {
-        args.tail_data = (NANO_u8*)&parent_id;
-        args.tail_data_len = sizeof(parent_id);
+        args.tail_data = (NANO_u8*)parent_id;
+        args.tail_data_len = sizeof(ObjectId);
         args.tail_data_align = NANO_XRCE_ObjectId_alignment;
         break;
     }
     case NANO_XRCE_OBJK_DATAREADER:
     {
-        args.tail_data = (NANO_u8*)&parent_id;
-        args.tail_data_len = sizeof(parent_id);
+        args.tail_data = (NANO_u8*)parent_id;
+        args.tail_data_len = sizeof(ObjectId);
         args.tail_data_align = NANO_XRCE_ObjectId_alignment;
         break;
     }

@@ -19,4 +19,13 @@
 #ifndef nano_core_user_config_h
 #define nano_core_user_config_h
 
+/* Override default static configuration by defining symbols in this file.
+   See nano_core_config.h for all available configuration parameters. */
+
+/* Enable logging: */
+/* #define NANO_FEAT_LOG            1 */
+
+/* Enable debug precoditions: */
+/* #define NANO_ENABLE_PRECONDITION */
+
 #endif /* nano_core_user_config_h */

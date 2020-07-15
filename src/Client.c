@@ -2515,7 +2515,6 @@ NANO_XRCE_Client_create_object_w_args(
         NANO_LOG_OBJID("obj_id",req->obj_id)
         NANO_LOG_SN("req_sn",req->sn))
 
-    req = NULL;
     NANO_CHECK_RC(
         NANO_XRCE_Client_return_or_wait_for_request(
             self, req, request_token, args->req.timeout_ms),
