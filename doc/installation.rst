@@ -115,8 +115,8 @@ option to skip compilation of the source code.
 
     mkdir build && cd build
 
-    cmake /path/to/nano-client BUILD_DOCS=ON \
-                               BUILD_LIBRARIES=OFF
+    cmake /path/to/nano-client -DBUILD_DOCS=ON \
+                               -DBUILD_LIBRARIES=OFF
     
     cmake --build . --target install
 
