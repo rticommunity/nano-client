@@ -1,0 +1,25 @@
+/*e
+ * @mainpage RTI nano-client C++ API
+ * 
+ * @defgroup nano_api_cpp nano-client-cpp API
+ * @addtogroup nano_api_cpp
+ * @{ 
+ * 
+ * @defgroup nano_api_cpp_client                XRCE Client
+ *
+ * @defgroup nano_api_cpp_objects               XRCE Objects
+ *
+ * @defgroup nano_api_cpp_streams               XRCE Streams
+ *
+ * @defgroup nano_api_cpp_xcdr                  XCDR Serialization
+ *
+ * @defgroup nano_api_cpp_transport             XRCE Client Transport
+ * @addtogroup nano_api_cpp_transport
+ * @{
+ *      @defgroup nano_api_cpp_transport_serial XRCE Serial Client Transport
+ *      @defgroup nano_api_cpp_transport_udpv4  XRCE UDPv4 Client Transport
+ * @} *//* nano_api_cpp_transport *//*e
+ *
+ * @defgroup nano_api_cpp_infrastructure        XRCE Infrastructure
+ * 
+ * @} *//* nano_api */

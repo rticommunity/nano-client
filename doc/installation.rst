@@ -34,7 +34,7 @@ If you intend to use the Arduino-compatible API, an Arduino-compatible packaging
 version will first have to be generated. See :ref:`section-install-arduino`.
 
 When building |RTI| |NANO_CLIENT| with CMake, you can take advantage of the generated
-``install`` target to copy all generated build artifacts to your desired location.
+``install`` target to copy all build artifacts to your desired location.
 
 .. _section-install-arduino:
 
@@ -120,8 +120,8 @@ option to skip compilation of the source code.
     
     cmake --build . --target install
 
-    # Manual:   ./install/doc/nano-client/html
-    # API Ref:  ./install/doc/nano-client/html/api
+    # Manual:   ./install/doc/manual/nano-client/html
+    # API Ref:  ./install/doc/api/nano-client/html
 
 ``BUILD_DOCS_MANUAL`` and ``BUILD_DOCS_API`` can be used to further 
 enable/disable the generation of the Sphinx user manual, and the Doxygen

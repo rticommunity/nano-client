@@ -29,7 +29,12 @@ project(nano-client-cpp
 include(../../core/resource/cmake/nano-build.cmake)
 ################################################################################
 
+# This project does not have its own manual, only API docs
+set(BUILD_DOCS_MANUAL       OFF)
+
 nano_project()
+
+################################################################################
 
 # Enable C++11 for the project
 set(CMAKE_CXX_STANDARD          11)
@@ -67,6 +72,7 @@ function(build_nano_client_c)
 endfunction()
 
 if(NOT TARGET nano::nanoclient)
+    message(STATUS "Building nano-client for ${PROJECT_NAME}")
     build_nano_client_c()
 endif()
 
@@ -97,6 +103,9 @@ nano_component(NANO_CLIENT_CPP)
 nano_component_library(NANO_CLIENT_CPP)
 nano_component_install(NANO_CLIENT_CPP)
 
+# Unset these variables so that they may be picked up from the cache
+unset(NANO_CLIENT_CPP_INCLUDE_FILES_PUBLIC)
+
 ################################################################################
 
 set(NANO_CLIENT_CPP_UDPV4_INCLUDE_FILES_PUBLIC
@@ -116,6 +125,8 @@ if(${PROJECT_NAME}_ENABLE_TRANSPORT_UDPV4)
     nano_component(NANO_CLIENT_CPP_UDPV4)
     nano_component_library(NANO_CLIENT_CPP_UDPV4)
     nano_component_install(NANO_CLIENT_CPP_UDPV4)
+    # Unset these variables so that they may be picked up from the cache
+    unset(NANO_CLIENT_CPP_UDPV4_INCLUDE_FILES_PUBLIC)
 endif()
 
 ################################################################################
@@ -137,6 +148,24 @@ if(${PROJECT_NAME}_ENABLE_TRANSPORT_SERIAL)
     nano_component(NANO_CLIENT_CPP_SERIAL)
     nano_component_library(NANO_CLIENT_CPP_SERIAL)
     nano_component_install(NANO_CLIENT_CPP_SERIAL)
+    # Unset these variables so that they may be picked up from the cache
+    unset(NANO_CLIENT_CPP_SERIAL_INCLUDE_FILES_PUBLIC)
+endif()
+
+
+################################################################################
+
+if (${PROJECT_NAME}_BUILD_DOCS)
+
+    set(DOC_INPUT_DIRS  ${PROJECT_SOURCE_DIR}/include)
+
+    set(DOC_INPUT_SRC   ${NANO_CLIENT_CPP_INCLUDE_FILES_PUBLIC}
+                        ${NANO_CLIENT_CPP_UDPV4_INCLUDE_FILES_PUBLIC}
+                        ${NANO_CLIENT_CPP_SERIAL_INCLUDE_FILES_PUBLIC})
+    
+    set(DOC_DEPS        nano-client)
+
+    nano_project_docs()
 endif()
 
 ################################################################################

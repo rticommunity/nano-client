@@ -6,9 +6,11 @@
 API Reference
 *************
 
-.. raw:: html
+.. toctree::
+    :maxdepth: 2
+    :caption: API Reference
+    :name: apireftoc
 
-    <p>
-    <a href="api/index.html" target="_blank">Open API Reference in a new tab</a>
-    </p>
-    <iframe src="api/index.html" height="600px" width="100%"></iframe>
+    api_ref_c
+    api_ref_cpp
+    api_ref_arduino

@@ -19,11 +19,24 @@
 #ifndef nano_client_stream_hpp
 #define nano_client_stream_hpp
 
+
+/**
+ * @file nano_client_stream.hpp
+ * @brief C++ XRCE Message Streams API
+ * 
+ */
+
+
 #include <nano/nano_client_c.hpp>
 
 namespace rti { namespace nano { namespace xrce {
 
 class Client;
+
+/**
+ * @addtogroup nano_api_cpp_streams
+ * @{
+ */
 
 #if NANO_FEAT_RELIABILITY
 
@@ -48,20 +61,50 @@ class Client;
 
 #endif
 
+/**
+ * @brief TODO
+ * 
+ */
 class Stream
 {
 public:
+    /**
+     * @brief Construct a new Stream
+     * 
+     * @param client 
+     * @param id 
+     */
     Stream(Client& client, const uint8_t id);
 
+    /**
+     * @brief TODO
+     * 
+     * @return 
+     */
     virtual bool enable();
 
+    /**
+     * @brief TODO
+     * 
+     * @return StreamId 
+     */
     StreamId id() const
     {
         return this->_id;
     }
 
+    /**
+     * @brief TODO
+     * 
+     * @return 
+     */
     bool builtin() const;
 
+    /**
+     * @brief TODO
+     * 
+     * @return StreamStorage* 
+     */
     virtual StreamStorage *storage() = 0;
 
 protected:
@@ -70,11 +113,26 @@ protected:
     NANO_XRCE_StreamId _id;
 };
 
+/**
+ * @brief TODO
+ * 
+ */
 class BestEffortStream : public Stream
 {
 public:
+    /**
+     * @brief Construct a new Best Effort Stream
+     * 
+     * @param client 
+     * @param id 
+     */
     BestEffortStream(Client& client, const uint8_t id);
 
+    /**
+     * @brief TODO
+     * 
+     * @return StreamStorage* 
+     */
     StreamStorage *storage()
     {
         return &this->_def_storage.base;
@@ -86,31 +144,71 @@ private:
 
 #if NANO_FEAT_RELIABILITY
 
+/**
+ * @brief TODO
+ * 
+ */
 class ReliableStream : public Stream
 {
 public:
+    /**
+     * @brief Construct a new Reliable Stream
+     * 
+     * @param client 
+     * @param id 
+     */
     ReliableStream(Client& client, uint8_t id);
 
+    /**
+     * @brief TODO
+     * 
+     * @return 
+     */
     bool enable();
 
+    /**
+     * @brief TODO
+     * 
+     * @return const Buffer& 
+     */
     const Buffer& frag_out_buffer() const
     {
         return this->_frag_out_buffer;
     }
+    /**
+     * @brief TODO
+     * 
+     * @param buffer 
+     * @param len 
+     */
     void frag_out_buffer(Data *const buffer, const size_t len)
     {
         this->_frag_out_buffer.set(buffer, len);
     }
-
+    /**
+     * @brief TODO
+     * 
+     * @return const Buffer& 
+     */
     const Buffer& frag_in_buffer() const
     {
         return this->_frag_out_buffer;
     }
+    /**
+     * @brief TPDP
+     * 
+     * @param buffer 
+     * @param len 
+     */
     void frag_in_buffer(Data *const buffer, const size_t len)
     {
         this->_frag_in_buffer.set(buffer, len);
     }
-
+    /**
+     * @brief TODO
+     * 
+     * @return StreamStorage* 
+     */
     StreamStorage *storage()
     {
         return &this->_def_storage.base;
@@ -123,6 +221,8 @@ private:
 };
 
 #endif /* NANO_FEAT_RELIABILITY */
+
+/** @} *//* nano_api_cpp_streams */
 
 } /* namespace xrce */ } /* namespace nano */ } /* namespace rti */
 

@@ -20,7 +20,6 @@ This project is part of RTI's :link_connext_experimental:`Experimental Projects 
 .. toctree::
     :maxdepth: 2
     :numbered:
-    :glob:
     :caption: Table of Contents
     :name: toptoc
 

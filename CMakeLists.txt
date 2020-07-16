@@ -91,6 +91,7 @@ set(NANO_CLIENT_LIBRARY         client)
 
 nano_component(NANO_CLIENT)
 
+# Unset these variables so that they may be picked up from the cache
 unset(NANO_CLIENT_INCLUDE_FILES_PUBLIC)
 
 nano_component_library(NANO_CLIENT)
@@ -115,6 +116,7 @@ if (${PROJECT_NAME}_ENABLE_TRANSPORT_UDPV4)
     nano_component(NANO_CLIENT_UDPV4)
     nano_component_library(NANO_CLIENT_UDPV4)
     nano_component_install(NANO_CLIENT_UDPV4)
+    # Unset these variables so that they may be picked up from the cache
     unset(NANO_CLIENT_UDPV4_INCLUDE_FILES_PUBLIC)
 endif()
 
@@ -137,6 +139,7 @@ if (${PROJECT_NAME}_ENABLE_TRANSPORT_SERIAL)
     nano_component(NANO_CLIENT_SERIAL)
     nano_component_library(NANO_CLIENT_SERIAL)
     nano_component_install(NANO_CLIENT_SERIAL)
+    # Unset these variables so that they may be picked up from the cache
     unset(NANO_CLIENT_SERIAL_INCLUDE_FILES_PUBLIC)
 endif()
 
@@ -161,7 +164,12 @@ if (${PROJECT_NAME}_BUILD_DOCS)
                         platform.rst
                         transport.rst
                         vars.rst
-                        api_ref.rst)
+                        api_ref.rst
+                        api_ref_c.rst
+                        api_ref_cpp.rst
+                        api_ref_arduino.rst)
+
+    set(DOC_ROOT_INDEX  index.html)
     
     nano_project_docs()
 endif()

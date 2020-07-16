@@ -19,6 +19,13 @@
 #ifndef nano_client_transport_serial_hpp
 #define nano_client_transport_serial_hpp
 
+/**
+ * @file nano_client_transport_serial.hpp
+ * @brief C++ XRCE Serial Client Transport
+ * 
+ */
+
+
 #include <nano/nano_client_transport.hpp>
 #include "nano/nano_core_xrce_transport_serial.h"
 
@@ -26,18 +33,47 @@
 
 namespace rti { namespace nano { namespace xrce {
 
+/**
+ * @addtogroup nano_api_cpp_transport_serial
+ * @{
+ */
+
+/**
+ * @brief TODO
+ * 
+ */
 class SerialTransport : public Transport
 {
 public:
+    /**
+     * @brief TODO
+     * 
+     */
     static const uint8_t DEFAULT_AGENT_ADDRESS = 0xFF;
+    /**
+     * @brief TODO
+     * 
+     */
     static const uint8_t DEFAULT_BIND_ADDRESS = 0x01;
+    /**
+     * @brief TODO
+     * 
+     */
     static const uint32_t DEFAULT_SPEED = 115200;
 #if NANO_PLATFORM == NANO_PLATFORM_ARDUINO
+    /**
+     * @brief TODO
+     * 
+     */
     static const uint8_t DEFAULT_PORT = 0;
 #else
     static const char *const DEFAULT_PORT;
 #endif /* NANO_PLATFORM */
 
+    /**
+     * @brief TODO
+     * 
+     */
     SerialTransport(
         Data *const recv_buffer,
         const size_t recv_buffer_size,
@@ -51,25 +87,57 @@ public:
         const uint8_t agent_address = SerialTransport::DEFAULT_AGENT_ADDRESS,
         const uint8_t bind_address = SerialTransport::DEFAULT_BIND_ADDRESS);
 
+    /**
+     * @brief TODO
+     * 
+     * @param speed 
+     */
     void speed(const uint32_t speed);
 
 #if NANO_PLATFORM == NANO_PLATFORM_ARDUINO
     void port(const uint8_t port);
 #else
+    /**
+     * @brief TODO
+     * 
+     * @param port 
+     */
     void port(const char *const port);
 #endif
 
+    /**
+     * @brief TODO
+     * 
+     * @param addr 
+     */
     void bind_address(const uint8_t addr);
 
+    /**
+     * @brief TODO
+     * 
+     * @param addr 
+     */
     void agent_address(const uint8_t addr);
 
+    /**
+     * @brief TODO
+     * 
+     * @return ClientTransportProperties* 
+     */
     ClientTransportProperties* c_properties();
+    /**
+     * @brief TODO
+     * 
+     * @return ClientTransport* 
+     */
     ClientTransport* c_transport();
     
 private:
     NANO_XRCE_SerialClientTransport _transport;
     NANO_XRCE_SerialClientTransportProperties _properties;
 };
+
+/** @} *//* nano_api_cpp_transport_serial */
 
 } /* namespace xrce */ } /* namespace nano */ } /* namespace rti */
 
