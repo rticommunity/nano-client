@@ -328,17 +328,23 @@ macro(nano_project_doc_vars)
     set(prj_doc_tgt             ${PROJECT_NAME}-docs)
     set(prj_doc_doxygen_toc     ${prj_doc_dir}/${prj_name}-toc.dox)
     set(prj_doc_tagfile_deps)
+    set(prj_doc_tagfile_deps_tgt_index)
     set(prj_doc_tagfile_deps_dox)
     foreach(dep IN LISTS prj_doc_deps)
         set(dep_tagfile "${${dep}_DOC_TAGFILE}")
         set(dep_apidir  "../../../api/${dep}/html")
         list(APPEND prj_doc_tagfile_deps "${dep_tagfile}")
         list(APPEND prj_doc_deps_tgt     "${dep}-docs")
+        if (TARGET "${dep}-docs-index")
+            list(APPEND prj_doc_tagfile_deps_tgt_index "${dep}-docs-index")
+        endif()
         list(APPEND prj_doc_tagfile_deps_dox "${dep_tagfile}=${dep_apidir}")
     endforeach()
     string(REPLACE ";" " \\\n" 
         prj_doc_tagfile_deps_dox  "${prj_doc_tagfile_deps_dox}")
-    set(prj_doc_root_index  ${prj_doc_dir}/${prj_doc_root_index_rel})
+    if (NOT "${prj_doc_root_index_rel}" STREQUAL "")
+        set(prj_doc_root_index  ${prj_doc_dir}/${prj_doc_root_index_rel})
+    endif()
 endmacro()
 
 ################################################################################
@@ -807,10 +813,6 @@ function(nano_project_docs)
     set(${PROJECT_NAME}_DOC_DEPS        ${DOC_DEPS}
         CACHE INTERNAL "List of other projects which are documentation dependencies for ${PROJECT_NAME}")
 
-    if (NOT DEFINED DOC_ROOT_INDEX)
-        set(DOC_ROOT_INDEX      "index.html")
-    endif()
-
     set(${PROJECT_NAME}_DOC_ROOT_INDEX  ${DOC_ROOT_INDEX}
         CACHE INTERNAL "HTML index page to install in doc/")
 
@@ -858,9 +860,6 @@ function(nano_project_docs)
             ${NANO_BUILD_SYS_DIR}/doc/Doxyfile.in
             ${prj_doc_doxyfile})
         
-        message(STATUS "prj_doc_tagfile_deps(${prj_name}) = ${prj_doc_tagfile_deps}")
-        message(STATUS "prj_doc_tagfile(${prj_name}) = ${prj_doc_tagfile}")
-
         add_custom_command(OUTPUT ${prj_doc_doxygen_dir} ${prj_doc_tagfile}
                 COMMAND ${CMAKE_COMMAND} -E make_directory ${prj_doc_doxygen_dir}
                 COMMAND ${DOXYGEN} ${prj_doc_doxyfile}
@@ -924,16 +923,21 @@ function(nano_project_docs)
         list(APPEND prj_doc_tgt_deps ${prj_doc_html_dir})
     endif()
 
-    if (EXISTS "${prj_doc_root_index}")
+    if (NOT "${prj_doc_root_index}" STREQUAL "" AND
+        EXISTS "${prj_doc_root_index}")
         add_custom_command(OUTPUT ${prj_doc_build_dir}/index.html
                 COMMAND ${CMAKE_COMMAND} -E copy ${prj_doc_root_index} ${prj_doc_build_dir}
                 COMMAND $(CMAKE_COMMAND) -E rename ${prj_doc_build_dir}/${prj_doc_root_index_rel} ${prj_doc_build_dir}/index.html
+                DEPENDS ${prj_doc_tagfile_deps_tgt_index}
                 VERBATIM)
 
         install(FILES ${prj_doc_build_dir}/index.html
             DESTINATION ${prj_install_dir_doc})
 
-        list(APPEND prj_doc_tgt_deps ${prj_doc_build_dir}/index.html)
+        add_custom_target(${prj_doc_tgt}-index
+            DEPENDS ${prj_doc_build_dir}/index.html)
+
+        list(APPEND prj_doc_tgt_deps ${prj_doc_tgt}-index)
     endif()
    
     add_custom_target(${prj_doc_tgt} ALL DEPENDS ${prj_doc_tgt_deps})

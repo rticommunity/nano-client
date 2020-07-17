@@ -169,7 +169,7 @@ if (${PROJECT_NAME}_BUILD_DOCS)
                         api_ref_cpp.rst
                         api_ref_arduino.rst)
 
-    set(DOC_ROOT_INDEX  index.html)
+    # set(DOC_ROOT_INDEX  index.html)
     
     nano_project_docs()
 endif()

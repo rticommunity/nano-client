@@ -54,7 +54,7 @@ information on how to install, build, and use *RTI nano-client*.
 
 [omg-xrce]: https://www.omg.org/spec/DDS-XRCE/About-DDS-XRCE/ "OMG DDS-XRCE Specification"
 [nano-agent-git]: https://github.com/rticommunity/nano-agent.git "RTI nano-agent Git repository"
-[nano-client-docs]: https://community.rti.com/static/documentation/nano/nano-client/latest "RTI nano-client User Manual"
+[nano-client-docs]: https://community.rti.com/static/documentation/nano/nano-client/latest/manual/nano-client/html/ "RTI nano-client User Manual"
 [dds-xrce-architecture]: doc/static/dds_xrce_architecture.png "DDS-XRCE System Architecture"
 [experimental-faq]: https://www.rti.com/developers/rti-labs/experimental-product-faq "RTI Experimental Product FAQ"
 [connext-home]: https://www.rti.com/products/connext-dds-professional "RTI Connext DDS Professional Homepage"
