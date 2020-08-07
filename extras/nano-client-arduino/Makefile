@@ -111,7 +111,7 @@ define GENERATED_ARCHIVE
 endef
 
 define GIT_SUFFIX
-	git symbolic-ref -q --short HEAD || git describe --tags --exact-match
+	git symbolic-ref -q --short HEAD 2>/dev/null || git describe --tags --exact-match 2>/dev/null
 endef
 
 define LIB_REL_DIR
