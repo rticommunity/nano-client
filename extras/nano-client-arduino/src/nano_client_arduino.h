@@ -66,7 +66,17 @@ typedef rti::nano::xrce::StreamStorage                  XrceStreamStorage;
  * @brief TODO
  * 
  */
+typedef rti::nano::xrce::BestEffortStream               XrceBestEffortStream;
+/**
+ * @brief TODO
+ * 
+ */
 typedef rti::nano::xrce::DefaultBestEffortStreamStorage XrceDefaultBestEffortStreamStorage;
+/**
+ * @brief TODO
+ * 
+ */
+typedef rti::nano::xrce::Client                         XrceClient;
 /**
  * @brief TODO
  * 
@@ -97,6 +107,11 @@ typedef rti::nano::xrce::ObjectKind                     XrceObjectKind;
  * 
  */
 typedef rti::nano::xrce::ReadSpecification              XrceReadSpecification;
+/**
+ * @brief TODO
+ * 
+ */
+typedef rti::nano::xrce::ReceivedData                   XrceReceivedData;
 /**
  * @brief TODO
  * 
