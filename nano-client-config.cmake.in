@@ -6,9 +6,25 @@ include(CMakeFindDependencyMacro)
 
 get_filename_component(nano-client_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
 
-set(nano-client_COMPONENTS          client)
+set(nano-client_COMPONENTS
+  client
+  clientudpv4
+  clientserial)
 
 set(nano-core_FIND_COMPONENTS       ${nano-client_FIND_COMPONENTS})
+
+function(_load_client_dependecies type)
+  list(FIND nano-core_FIND_COMPONENTS client${type} _transport_REQUIRED)
+  if(_transport_REQUIRED GREATER_EQUAL 0)
+    list(FIND nano-core_FIND_COMPONENTS transport${type} _transport_REQUESTED)
+    if(_transport_REQUESTED EQUAL -1)
+      list(APPEND nano-core_FIND_COMPONENTS transport${type})
+    endif()
+  endif()
+  set(nano-core_FIND_COMPONENTS ${nano-core_FIND_COMPONENTS} PARENT_SCOPE)
+endfunction()
+_load_client_dependecies(udpv4)
+_load_client_dependecies(serial)
 
 if(NOT "${nano-core_FIND_COMPONENTS}" STREQUAL "")
     list(REMOVE_ITEM nano-core_FIND_COMPONENTS ${nano-client_COMPONENTS})
