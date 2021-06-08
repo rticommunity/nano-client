@@ -6,7 +6,10 @@ include(CMakeFindDependencyMacro)
 
 get_filename_component(nano-client-cpp_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
 
-set(nano-client-cpp_COMPONENTS          clientcpp)
+set(nano-client-cpp_COMPONENTS
+  cppclient
+  cpptransportudpv4
+  cpptransportserial)
 
 set(nano-client_FIND_COMPONENTS       ${nano-client-cpp_FIND_COMPONENTS})
 
@@ -22,8 +25,8 @@ if(NOT "${nano-client_FIND_COMPONENTS}" STREQUAL "")
 
 endif()
 
-if (NOT TARGET nano::nanoclientcpp)
-    include(${nano-client-cpp_DIR}/nano-client-cpp-clientcpp-targets.cmake)
+if (NOT TARGET nano::nanocppclient)
+    include(${nano-client-cpp_DIR}/nano-client-cpp-cppclient-targets.cmake)
 endif()
 
 foreach(_req_component IN LISTS nano-client-cpp_FIND_COMPONENTS)
@@ -31,7 +34,7 @@ foreach(_req_component IN LISTS nano-client-cpp_FIND_COMPONENTS)
     if (_req_component_FOUND EQUAL -1)
         set(nano-client-cpp_FOUND
                 False)
-        set(nano-client-c[[_NOT_FOUND_MESSAGE
+        set(nano-client-cpp_NOT_FOUND_MESSAGE
                 "Unsupported nano-client-cpp component: ${_req_component}")
     endif()
 
