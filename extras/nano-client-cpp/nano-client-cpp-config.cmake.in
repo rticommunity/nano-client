@@ -23,7 +23,7 @@ if(NOT "${nano-client_FIND_COMPONENTS}" STREQUAL "")
 endif()
 
 if (NOT TARGET nano::nanoclientcpp)
-    include(${nano-client-cpp_DIR}/nano-client-cpp-clientcpp-targets.cmake)
+    include(${nano-client-cpp_DIR}/nano-client-cpp-cppclient-targets.cmake)
 endif()
 
 foreach(_req_component IN LISTS nano-client-cpp_FIND_COMPONENTS)
