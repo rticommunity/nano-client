@@ -1162,8 +1162,8 @@ typedef struct NANODllExport NANO_TimeI {
     {}
 
     NANO_TimeI(const NANO_i32 s, const NANO_u32 ns)
-    : sec(sec),
-      nanosec(nanosec)
+    : sec(s),
+      nanosec(ns)
     {}
 
 #endif /* NANO_CPP */
