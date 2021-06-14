@@ -480,48 +480,6 @@ typedef struct NANODllExport NANO_XRCE_StreamStorageI
     0     /* payload_in_len */\
 }
 
-NANO_XRCE_InlineHeaderBuffer*
-NANO_XRCE_StreamStorage_header_buffer(
-    NANO_XRCE_StreamStorage *const self,
-    NANO_usize i);
-
-#define NANO_XRCE_StreamStorage_header_buffer(s_,i_) \
-    ((NANO_XRCE_InlineHeaderBuffer*)\
-        ((s_)->header + \
-            (NANO_XRCE_INLINEHEADERBUFFER_INLINE_SIZE * (i_))))
-
-void
-NANO_XRCE_StreamStorage_initialize_headers(
-    NANO_XRCE_StreamStorage *const self,
-    const NANO_XRCE_SessionId session_id,
-    const NANO_XRCE_ClientKey key,
-    const NANO_XRCE_StreamId stream_id);
-#define NANO_XRCE_StreamStorage_initialize_headers(s_,ss_,k_,sid_) \
-{\
-    NANO_usize i_ = 0;\
-    for (i_ = 0; i_ < (s_)->header_max; i_++)\
-    {\
-        NANO_XRCE_InlineHeaderBuffer_initialize(\
-            NANO_XRCE_StreamStorage_header_buffer((s_),i_),(ss_),(k_),(sid_));\
-    }\
-}
-
-
-void
-NANO_XRCE_StreamStorage_update_sessionid(
-    NANO_XRCE_StreamStorage *const self,
-    const NANO_XRCE_SessionId id);
-
-#define NANO_XRCE_StreamStorage_update_sessionid(s_,id_) \
-{\
-    NANO_usize i_ = 0;\
-    for (i_ = 0; i_ < (s_)->header_max; i_++)\
-    {\
-        *NANO_XRCE_InlineHeaderBuffer_session_id_ptr(\
-            NANO_XRCE_StreamStorage_header_buffer((s_),(i_))) = (id_);\
-    }\
-}
-
 /*e
  * @brief TODO
  * 
@@ -689,6 +647,8 @@ NANO_XRCE_NoneStreamStorage_initialize(
  * 
  */
 #define NANO_XRCE_CUSTOMSTREAMSTORAGE_INITIALIZE(s_) \
+{\
+    NANO_OSAPI_Memory_zero((void*)(s_), sizeof(*(s_)));\
     NANO_XRCE_StreamStorage_initialize(&(s_)->base,\
         (NANO_MessageBufferData*)(s_)->header,\
         (sizeof((s_)->header) / \
@@ -708,7 +668,8 @@ NANO_XRCE_NoneStreamStorage_initialize(
         (s_)->payload_user,\
         (sizeof((s_)->payload_user) / sizeof(NANO_MessageBuffer)),\
         (s_)->payload_in,\
-        sizeof((s_)->payload_in))
+        sizeof((s_)->payload_in));\
+}
 
 /*e
  * @brief TODO
