@@ -1,0 +1,9 @@
+struct SensorCombined {
+  uint64 timestamp;
+  float gyro_rad[3];
+  uint32 gyro_integral_dt;
+  int32 accelerometer_timestamp_relative;
+  float accelerometer_m_s2[3];
+  uint32 accelerometer_integral_dt;
+  octet accelerometer_clipping;
+};

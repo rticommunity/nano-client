@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<types xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="file:////opt/rti/ndds/rti_connext_dds-6.0.1/bin/../resource/app/app_support/rtiddsgen/schema/rti_dds_topic_types.xsd">
+<struct name= "SensorCombined">
+  <member name="timestamp" type="uint64"/>
+  <member name="gyro_rad" type="float32" arrayDimensions="3"/>
+  <member name="gyro_integral_dt" type="uint32"/>
+  <member name="accelerometer_timestamp_relative" type="int32"/>
+  <member name="accelerometer_m_s2" type="float32" arrayDimensions="3"/>
+  <member name="accelerometer_integral_dt" type="uint32"/>
+  <member name="accelerometer_clipping" type="byte"/>
+</struct>
+</types>

@@ -39,7 +39,8 @@ include(core/resource/cmake/nano-build.cmake)
 ################################################################################
 
 set(EXAMPLES        sensor
-                    shape)
+                    shape
+                    drone)
 
 set(PREFIX_PATH     ${PROJECT_BINARY_DIR}/core)
 
