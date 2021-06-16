@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- * (c) 2021 Copyright, Real-Time Innovations, Inc. (RTI)
+ * (c) 2020 Copyright, Real-Time Innovations, Inc. (RTI)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,14 +20,28 @@
  Start nanoagentd with the following command (change paths and other arguments
  according to your environment):
  
-   nanoagentd -U -a -c resource/xml/examples/drone_agent.xml
+   nanoagentd -U -a -c resource/xml/examples/shape_agent.xml
  
  ******************************************************************************/
 
 #include "drone-api.h"
 
-#define CLIENT_KEY                  0x0C0D0E0F
+#define BIND_PORT                   7403
+#define CLIENT_KEY                  0x0A0B0C0D
 
+NANO_u32 sensor_data_updates = 0;
+
+void 
+on_data(
+    NANO_XRCE_ClientListener *const self,
+    NANO_XRCE_Client *const client,
+    const NANO_XRCE_StreamId stream_id,
+    const NANO_XRCE_RequestId *const read_request,
+    const NANO_XRCE_ObjectId *const reader,
+    const NANO_XRCE_DataFormat format,
+    const NANO_bool little_endian,
+    const NANO_u8 *const data,
+    const NANO_usize data_len);
 
 int main(int argc, char const *argv[])
 {
@@ -36,12 +50,12 @@ int main(int argc, char const *argv[])
     const NANO_u8 agent_addr[4] = AGENT_ADDRESS;
 
     NANO_MessageBufferData recv_buffer[
-            RECV_BUFFER_SIZE / sizeof(NANO_MessageBufferData)] = { 0 };
+        RECV_BUFFER_SIZE / sizeof(NANO_MessageBufferData)] = { 0 };
 
     NANO_XRCE_Udpv4Client udp_client = NANO_XRCE_UDPV4CLIENT_INITIALIZER;
     NANO_XRCE_Client *const client = &udp_client.client;
 
-#if WRITE_RELIABLE
+#if RELIABLE
     NANO_XRCE_DefaultReliableStreamStorage
         stream_storage_sensor_data =
             NANO_XRCE_DEFAULTRELIABLESTREAMSTORAGE_INITIALIZER;
@@ -49,18 +63,12 @@ int main(int argc, char const *argv[])
     NANO_XRCE_DefaultBestEffortStreamStorage
         stream_storage_sensor_data =
             NANO_XRCE_DEFAULTBESTEFFORTSTREAMSTORAGE_INITIALIZER;
-#endif /* WRITE_RELIABLE */
+#endif /* RELIABLE */
+        
+    NANO_XRCE_ClientRequestToken
+        read_req_sensor_data = NANO_XRCE_CLIENTREQUESTTOKEN_INITIALIZER;
 
     NANO_RetCode retcode = NANO_RETCODE_ERROR;
-
-    NANO_u32 published_samples = 0;
-    
-    struct SensorCombined sensor_data = SensorCombined_INITIALIZER;
-
-    NANO_MessageBufferData sensor_data_buffer[
-            SensorCombined_BUFFER_SIZE / sizeof(NANO_MessageBufferData)] = { 0 };
-    
-    NANO_usize sensor_data_buffer_size = sizeof(sensor_data_buffer);
 
     NANO_LOG_SET_LEVEL(LOG_LEVEL)
 
@@ -74,17 +82,23 @@ int main(int argc, char const *argv[])
                 agent_addr,
                 0 /* default agent port */,
                 NULL /* default bind address */,
-                0 /* default bind port */))
+                BIND_PORT /* custom bind port */))
     {
         printf("ERROR: failed to initialize client\n");
         goto done;
     }
 
+    NANO_XRCE_Client_on_data(client, on_data, NULL);
+
 #if RELIABLE
-    NANO_XRCE_DefaultReliableStreamStorage_initialize(&stream_storage_sensor_data);
+    NANO_XRCE_DefaultReliableStreamStorage_initialize(
+        &stream_storage_sensor_data);
 #else
-    NANO_XRCE_DefaultBestEffortStreamStorage_initialize(&stream_storage_sensor_data);
+    NANO_XRCE_DefaultBestEffortStreamStorage_initialize(
+        &stream_storage_sensor_data);
 #endif /* RELIABLE */
+
+    NANO_XRCE_Client_liveliness_assertion_period(client, 2000);
 
     NANO_XRCE_Client_enable_stream(
         client, SENSOR_DATA_STREAM_ID, &stream_storage_sensor_data.base);
@@ -100,46 +114,39 @@ int main(int argc, char const *argv[])
         }
     } while (!NANO_XRCE_Client_connected(client));
 
-    while (MAX_SAMPLES <= 0 ||
-        (published_samples * 3) < MAX_SAMPLES)
+    if (NANO_RETCODE_OK != 
+            NANO_XRCE_Client_read_data(
+                client,
+                &read_req_sensor_data,
+                /* stream for the read request */
+                NANO_XRCE_STREAMID_BUILTIN_RELIABLE,
+                /* default behavior (block until ack) */
+                NANO_XRCE_REQUESTFLAGS_SYNC,
+                REQUEST_TIMEOUT,
+                SENSOR_DATA_READER_ID,
+                /* stream on which data will be forwarded */
+                SENSOR_DATA_STREAM_ID,
+                NULL /* no data delivery ctrl */,
+                NULL /* no content filter */))
     {
-        /* Serialize Shape to a buffer in XCDR format */
-        sensor_data_buffer_size = sizeof(sensor_data_buffer);
-        serialize_sensor_data(
-          &sensor_data, (NANO_u8*)sensor_data_buffer, &sensor_data_buffer_size);
-        
-        printf("Publishing sensor data %u\n", published_samples);
+        printf("ERROR: failed to request circles from Agent\n");
+        goto disconnect;
+    }
 
-        if (NANO_RETCODE_OK != 
-                NANO_XRCE_Client_write_data(
-                    client,
-                    NULL,
-                    SENSOR_DATA_STREAM_ID,
-                    NANO_XRCE_REQUESTFLAGS_SYNC,
-                    REQUEST_TIMEOUT,
-                    SENSOR_DATA_WRITER_ID,
-                    (const NANO_u8*)sensor_data_buffer,
-                    sensor_data_buffer_size))
+    while (MAX_SAMPLES <= 0 || sensor_data_updates < MAX_SAMPLES)
+    {
+
+        retcode = NANO_XRCE_Client_run_session(client, 0, RECV_DATA_TIMEOUT);
+
+        if (NANO_RETCODE_TIMEOUT == retcode)
         {
-            printf("ERROR: failed to publish sample\n");
+            printf("TIMEOUT: while waiting for data from agent\n");
         }
-
-        published_samples += 1;
-
-#if NANO_PLATFORM_IS_POSIX
-#if defined(HAVE_NANOSLEEP) /* use nanosleep() if available */
+        else if (NANO_RETCODE_OK != retcode)
         {
-            struct timespec tout = { 5, 0 /* 5s */ };
-            nanosleep(&tout, NULL);
+            printf("ERROR: failed to wait for data from agent\n");
+            goto disconnect;
         }
-#elif defined(HAVE_USLEEP) /* otherwise fall back to usleep() or... */
-        usleep(5000000 /* 5000ms */);
-#else  /* finally resort to sleep() */
-        sleep(5);
-#endif /* HAVE_NANOSLEEP */
-#elif NANO_PLATFORM == NANO_PLATFORM_WINDOWS
-        SleepEx(5000, 0);
-#endif
     }
 
 disconnect:
@@ -161,4 +168,24 @@ disconnect:
     rc = 0;
 done:
     return rc;
+}
+
+void 
+on_data(
+    NANO_XRCE_ClientListener *const self,
+    NANO_XRCE_Client *const client,
+    const NANO_XRCE_StreamId stream_id,
+    const NANO_XRCE_RequestId *const read_request,
+    const NANO_XRCE_ObjectId *const reader,
+    const NANO_XRCE_DataFormat format,
+    const NANO_bool little_endian,
+    const NANO_u8 *const data,
+    const NANO_usize data_len)
+{
+    struct SensorCombined sensor_data = SensorCombined_INITIALIZER;
+    const NANO_u16 reader_id = NANO_XRCE_ObjectId_to_u16(reader);
+    
+    deserialize_sensor_data(&sensor_data, data, data_len, little_endian);
+    sensor_data_updates += 1;
+    printf("received data: %u\n", sensor_data_updates);
 }

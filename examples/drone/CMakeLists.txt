@@ -22,10 +22,14 @@ project(drone C)
 
 find_package(nano-client REQUIRED COMPONENTS transportudpv4)
 
-set(examples        drone-writer-udp)
+set(examples
+  drone-writer-udp
+  drone-reader-udp)
 
 foreach(example IN LISTS examples)
-    add_executable(${example}           ${example}.c)
+    add_executable(${example}
+      ${example}.c
+      drone-api.c)
     if ("${example}" MATCHES "udp")
         set(nano_lib                    nano::nanoclientudpv4)
     elseif("${example}" MATCHES "serial")
