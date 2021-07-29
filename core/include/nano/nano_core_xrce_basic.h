@@ -479,6 +479,10 @@ NANO_XRCE_ObjectKind_initialize(
  * @brief NANO_XRCE_ObjectKind value for XRCE Client instances.
  */
 #define NANO_XRCE_OBJK_CLIENT           ((NANO_XRCE_ObjectKind)0x0E)
+/*e
+ * @brief NANO_XRCE_ObjectKind value for HTTP Resource instances.
+ */
+#define NANO_XRCE_OBJK_HTTP             ((NANO_XRCE_ObjectKind)0x1F)
 
 /*e
  * @brief Check if a NANO_XRCE_ObjectKind is valid.
@@ -502,8 +506,15 @@ NANO_XRCE_ObjectKind_is_valid(const NANO_XRCE_ObjectKind self);
     (k_) == NANO_XRCE_OBJK_QOSPROFILE || \
     (k_) == NANO_XRCE_OBJK_APPLICATION || \
     (k_) == NANO_XRCE_OBJK_AGENT || \
-    (k_) == NANO_XRCE_OBJK_CLIENT)
+    (k_) == NANO_XRCE_OBJK_CLIENT || \
+    (k_) == NANO_XRCE_OBJK_HTTP)
 
+NANO_bool
+NANO_XRCE_ObjectKinid_is_extended(const NANO_XRCE_ObjectKind self);
+
+#define NANO_XRCE_ObjectKind_is_extended(k_) \
+    ((NANO_bool)\
+        (((k_) & ((NANO_XRCE_ObjectKind)0x0F)) == ((NANO_XRCE_ObjectKind)0x0F)))
 
 /** @} *//* nano_api_obj */
 
@@ -592,6 +603,13 @@ NANO_XRCE_ObjectId_set(
 
 /*e
  * @brief Combine a NANO_XRCE_ObjectId with a type identifier.
+ *
+ * The object kind is encoded in the least-significant 4 bits, leaving the
+ * remaining 12 bits free for an arbitrary id.
+ *
+ * nano supports an extended range of object kinds than those defined by the
+ * XRCE specification. These object kinds use 8 bit and thus only leave 8 bit
+ * for arbitrary IDs.
  * 
  * @param self      The NANO_XRCE_ObjectId to be used as prefix.
  * @param kind      The NANO_XRCE_ObjectKind describing the type of XRCE object.
@@ -606,8 +624,15 @@ NANO_XRCE_ObjectId_combine(
 #define NANO_XRCE_ObjectId_combine(s_,k_,i_) \
 {\
     (i_)->value[0] = (s_)->value[0]; \
-    (i_)->value[1] = ((s_)->value[1] & 0xF0) | \
-                        ((NANO_XRCE_ObjectKind)(k_) & 0x0F); \
+    if (!NANO_XRCE_ObjectKind_is_extended(k_)) \
+    {\
+        (i_)->value[1] = \
+            ((s_)->value[1] & 0xF0) | ((NANO_XRCE_ObjectKind)(k_) & 0x0F);\
+    }\
+    else\
+    {\
+        (i_)->value[1] = ((NANO_XRCE_ObjectKind)(k_));\
+    }\
 }
 
 /*e
@@ -621,7 +646,10 @@ NANO_XRCE_ObjectKind
 NANO_XRCE_ObjectId_kind(NANO_XRCE_ObjectId *self);
 
 #define NANO_XRCE_ObjectId_kind(o_) \
-    ((NANO_XRCE_ObjectKind)((o_)->value[1] & 0x0F))
+    (((NANO_XRCE_ObjectKind)((o_)->value[1] & 0x0F) ==\
+        (NANO_XRCE_ObjectKind)0x0F)? \
+            (NANO_XRCE_ObjectKind)((o_)->value[1]) :\
+            (NANO_XRCE_ObjectKind)((o_)->value[1] & 0x0F))
 
 /*e
  * @brief Convert a NANO_XRCE_ObjectId to a NANO_u16

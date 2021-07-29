@@ -288,7 +288,7 @@ NANO_XRCE_InlineHeaderBuffer_update_next(
 /* The maximum size of an "inline payload" depends on the enabled 
    features. At a minimum, it must be big enough to hold a CREATE_CLIENT
    submessage (14-16-20). Next biggest payloads are CREATE (12), and
-   READ_DATA (8-[8+1+4+padding=16]). */
+   READ_DATA (8-[8+1+4+padding=16]). There is also HTTP_REQUEST (12). */
 
 #if NANO_FEAT_CONTENT_FILTER && \
     (!NANO_FEAT_PROPERTY || \

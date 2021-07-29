@@ -648,6 +648,15 @@
 #define NANO_FEAT_NATIVE_F128                   0
 #endif /* NANO_FEAT_NATIVE_F128 */
 
+
+#ifndef NANO_FEAT_HTTP_CLIENT
+/*i
+ * @brief Enable support for performing HTTP requests over XRCE.
+ *
+ */
+#define NANO_FEAT_HTTP_CLIENT                   1
+#endif /* NANO_FEAT_HTTP_CLIENT */
+
 /******************************************************************************
  *                             Resource Limits
  ******************************************************************************/

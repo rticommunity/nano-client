@@ -2283,6 +2283,119 @@ NANO_XRCE_TimestampReplyPayload_initialize(
 
 #endif /* NANO_FEAT_TIME_SYNC */
 
+#if NANO_FEAT_HTTP_CLIENT
+/******************************************************************************
+ *                              HttpRequestPayload
+ ******************************************************************************/
+/*i
+ * @addtogroup nano_api_xrce_payload_req_httprequest
+ * @{
+ */
+typedef NANO_u16 NANO_XRCE_HttpMethod;
+#define NANO_XRCE_HTTPMETHOD_UNKNOWN      ((NANO_XRCE_HttpMethod)0x00)
+#define NANO_XRCE_HTTPMETHOD_GET          ((NANO_XRCE_HttpMethod)0x01)
+#define NANO_XRCE_HTTPMETHOD_HEAD         ((NANO_XRCE_HttpMethod)0x02)
+#define NANO_XRCE_HTTPMETHOD_POST         ((NANO_XRCE_HttpMethod)0x03)
+#define NANO_XRCE_HTTPMETHOD_PUT          ((NANO_XRCE_HttpMethod)0x04)
+#define NANO_XRCE_HTTPMETHOD_DELETE       ((NANO_XRCE_HttpMethod)0x05)
+#define NANO_XRCE_HTTPMETHOD_CONNEXT      ((NANO_XRCE_HttpMethod)0x06)
+#define NANO_XRCE_HTTPMETHOD_OPTIONS      ((NANO_XRCE_HttpMethod)0x07)
+#define NANO_XRCE_HTTPMETHOD_TRACE        ((NANO_XRCE_HttpMethod)0x08)
+#define NANO_XRCE_HTTPMETHOD_PATCH        ((NANO_XRCE_HttpMethod)0x07)
+
+typedef NANO_u16 NANO_XRCE_HttpStatus;
+#define NANO_XRCE_HTTPSTATUS_UNKNOWN      ((NANO_XRCE_HttpStatus)0x00)
+
+/*i
+ * @brief TODO
+ *
+ */
+typedef struct NANODllExport NANO_XRCE_HttpRequestPayloadI
+{
+    /*i
+     * @brief TODO
+     *
+     */
+    NANO_XRCE_BaseObjectRequest base;
+    /*i
+     * @brief TODO
+     *
+     */
+    NANO_XRCE_HttpMethod method;
+    /*i
+     * @brief TODO
+     *
+     */
+    NANO_u32 data_len;
+} NANO_XRCE_HttpRequestPayload;
+
+#define NANO_XRCE_HTTPREQUESTPAYLOAD_HEADER_SERIALIZED_SIZE_MAX \
+NANO_OSAPI_Memory_align_size_up(\
+    NANO_XRCE_BASEOBJECTREQUEST_SERIALIZED_SIZE_MAX /* base */ +\
+    sizeof(NANO_u16) /* method */ +\
+    sizeof(NANO_u32) /* data_len */,\
+    sizeof(NANO_u32))
+
+#define NANO_XRCE_HTTPREQUESTPAYLOAD_INITIALIZER \
+{\
+    NANO_XRCE_BASEOBJECTREQUEST_INITIALIZER, /* base */\
+    NANO_XRCE_HTTPMETHOD_UNKNOWN, /* method */\
+    0 /* data_len */\
+}
+
+/*i @} *//* nano_api_xrce_payload_req_httprequest */
+
+/******************************************************************************
+ *                              HttpReplyPayload
+ ******************************************************************************/
+/*i
+ * @addtogroup nano_api_xrce_payload_req_httpreply
+ * @{
+ */
+
+
+/*i
+ * @brief TODO
+ *
+ */
+typedef struct NANODllExport NANO_XRCE_HttpReplyPayloadI
+{
+    /*i
+     * @brief TODO
+     *
+     */
+    NANO_XRCE_BaseObjectReply base;
+    /*i
+     * @brief TODO
+     *
+     */
+    NANO_XRCE_HttpStatus status;
+    /*i
+     * @brief TODO
+     *
+     */
+    NANO_u32 data_len;
+} NANO_XRCE_HttpReplyPayload;
+
+
+#define NANO_XRCE_HTTPREPLYPAYLOAD_HEADER_SERIALIZED_SIZE_MAX \
+NANO_OSAPI_Memory_align_size_up(\
+    NANO_XRCE_BASEOBJECTREPLY_SERIALIZED_SIZE_MAX /* base */ +\
+    sizeof(NANO_u16) /* status */ +\
+    sizeof(NANO_u32) /* data_len */,\
+    sizeof(NANO_u32))
+
+#define NANO_XRCE_HTTPREPLYPAYLOAD_INITIALIZER \
+{\
+    NANO_XRCE_BASEOBJECTREPLY_INITIALIZER, /* base */\
+    NANO_XRCE_HTTPSTATUS_UNKNOWN, /* status */\
+    0 /* data_len */\
+}
+
+/*i @} *//* nano_api_xrce_payload_req_httpreply */
+
+#endif /* NANO_FEAT_HTTP_CLIENT */
+
 /******************************************************************************
  *                          Submessage Types
  ******************************************************************************/
@@ -2370,6 +2483,16 @@ typedef NANO_u8 NANO_XRCE_SubmessageId;
  * @brief Identifier for submessage TIMESTAMP_REPLY.
  */
 #define NANO_XRCE_SUBMESSAGEID_TIMESTAMP_REPLY  ((NANO_XRCE_SubmessageId)15)
+/*i
+ * @brief Identifier for submessage HTTP_REQUEST.
+ */
+#define NANO_XRCE_SUBMESSAGEID_HTTP_REQUEST     ((NANO_XRCE_SubmessageId)129)
+/*i
+ * @brief Identifier for submessage HTTP_REPLY.
+ */
+#define NANO_XRCE_SUBMESSAGEID_HTTP_REPLY       ((NANO_XRCE_SubmessageId)130)
+
+
 
 /*i
  * @brief Check if a NANO_XRCE_SubmessageId is one of the known constants.
@@ -2397,7 +2520,9 @@ NANO_XRCE_SubmessageId_is_valid(const NANO_XRCE_SubmessageId self);
     (s_) == NANO_XRCE_SUBMESSAGEID_RESET || \
     (s_) == NANO_XRCE_SUBMESSAGEID_FRAGMENT || \
     (s_) == NANO_XRCE_SUBMESSAGEID_TIMESTAMP || \
-    (s_) == NANO_XRCE_SUBMESSAGEID_TIMESTAMP_REPLY)
+    (s_) == NANO_XRCE_SUBMESSAGEID_TIMESTAMP_REPLY || \
+    (s_) == NANO_XRCE_SUBMESSAGEID_HTTP_REQUEST || \
+    (s_) == NANO_XRCE_SUBMESSAGEID_HTTP_REPLY)
 
 const char*
 NANO_XRCE_SubmessageId_as_str(const NANO_XRCE_SubmessageId self);
@@ -2435,6 +2560,10 @@ NANO_XRCE_SubmessageId_as_str(const NANO_XRCE_SubmessageId self);
         "TIMESTAMP":\
     ((s_) == NANO_XRCE_SUBMESSAGEID_TIMESTAMP_REPLY)?\
         "TIMESTAMP_REPLY":\
+    ((s_) == NANO_XRCE_SUBMESSAGEID_HTTP_REQUEST)?\
+        "HTTP_REQUEST":\
+    ((s_) == NANO_XRCE_SUBMESSAGEID_HTTP_REPLY)?\
+        "HTTP_REPLY":\
         "UNKNOWN")
 
 /*i @} *//* nano_api_xrce_submsgheader */
