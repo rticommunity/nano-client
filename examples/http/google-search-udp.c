@@ -28,8 +28,6 @@
 #include "nano/nano_client_udpv4.h"
 #include "nano/nano_core_http.h"
 
-#define SENSOR_ID               0x00000001
-
 #define AGENT_ADDRESS           { 127, 0, 0, 1 }
 
 #define CLIENT_KEY              0x01020304
