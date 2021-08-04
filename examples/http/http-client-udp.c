@@ -27,6 +27,7 @@
 
 #include "nano/nano_client_udpv4.h"
 #include "nano/nano_core_http.h"
+#include <stdlib.h>
 
 #define SENSOR_ID               0x00000001
 
@@ -70,13 +71,24 @@
 #define JSON_POST_METADATA \
     "Content-Type: application/json; charset=utf-8"
 
+
+struct ReceivedReply
+{
+    NANO_XRCE_RequestId svc_request;
+    NANO_XRCE_ObjectId svc_resource;
+    NANO_XRCE_ServiceReplyStatus svc_status;
+    NANO_u8 *data;
+    NANO_usize data_len;
+    NANO_u8 *metadata;
+    NANO_usize metadata_len;
+};
+
+struct ReceivedReply last_reply;
+
 void
-on_service_reply(
-    NANO_XRCE_ClientListener *const self,
-    NANO_XRCE_Client *const client,
+print_reply(
     const NANO_XRCE_RequestId *const svc_request,
     const NANO_XRCE_ObjectId *const svc_resource,
-    const NANO_bool little_endian,
     const NANO_XRCE_ServiceReplyStatus svc_status,
     const NANO_u8 *const data,
     const NANO_usize data_len,
@@ -120,6 +132,51 @@ on_service_reply(
         printf("  metadata: <none>\n");
     }
     printf("## ## ## ## ## ## ## ## ## ## ## ##\n");
+}
+
+void
+on_service_reply(
+    NANO_XRCE_ClientListener *const self,
+    NANO_XRCE_Client *const client,
+    const NANO_XRCE_RequestId *const svc_request,
+    const NANO_XRCE_ObjectId *const svc_resource,
+    const NANO_bool little_endian,
+    const NANO_XRCE_ServiceReplyStatus svc_status,
+    const NANO_u8 *const data,
+    const NANO_usize data_len,
+    const NANO_u8 *const metadata,
+    const NANO_usize metadata_len)
+{
+    printf("HTTP reply received for 0x%04X\n",
+        NANO_XRCE_RequestId_to_u16(svc_request));
+
+    last_reply.svc_request = *svc_request;
+    last_reply.svc_resource = *svc_resource;
+    last_reply.svc_status = svc_status;
+    if (last_reply.data != NULL)
+    {
+        free(last_reply.data);
+        last_reply.data = NULL;
+        last_reply.data_len = 0;
+    }
+    if (data_len > 0)
+    {
+      last_reply.data = (NANO_u8*)malloc(data_len);
+      last_reply.data_len = data_len;
+      memcpy(last_reply.data, data, data_len);
+    }
+    if (last_reply.metadata != NULL)
+    {
+        free(last_reply.metadata);
+        last_reply.metadata = NULL;
+        last_reply.metadata_len = 0;
+    }
+    if (metadata_len > 0)
+    {
+      last_reply.metadata = (NANO_u8*)malloc(metadata_len);
+      last_reply.metadata_len = metadata_len;
+      memcpy(last_reply.metadata, metadata, metadata_len);
+    }
 }
 
 int main(int argc, char const *argv[])
@@ -184,6 +241,14 @@ int main(int argc, char const *argv[])
         }
     } while (!NANO_XRCE_Client_connected(client));
 
+#define print_last_reply() \
+    print_reply(\
+        &last_reply.svc_request,\
+        &last_reply.svc_resource,\
+        last_reply.svc_status,\
+        last_reply.data, last_reply.data_len,\
+        last_reply.metadata, last_reply.metadata_len)
+
     if (NANO_RETCODE_OK !=
         NANO_XRCE_Client_service_request(
             &udp_client.client,
@@ -201,6 +266,28 @@ int main(int argc, char const *argv[])
         printf("ERROR: failed to GET root\n");
         goto done;
     }
+    print_last_reply();
+
+    /* HTTP status codes (e.g. 404) should be propagated through XRCE */
+    if (NANO_RETCODE_OK !=
+        NANO_XRCE_Client_service_request(
+            &udp_client.client,
+            NULL /* token */,
+            NANO_XRCE_STREAMID_BUILTIN_RELIABLE,
+            NANO_XRCE_REQUESTFLAGS_CONFIRM |
+              NANO_XRCE_REQUESTFLAGS_SYNC,
+            REQUEST_TIMEOUT,
+            ROOT_ID,
+            NANO_HttpMethod_to_flags(NANO_HTTPMETHOD_GET),
+            // NULL, 0 /* query */,
+            "UNKNOWN_URL", sizeof("UNKNOWN_URL") - 1  /* query */,
+            NULL, 0 /* data */,
+            NULL, 0 /* metadata */))
+    {
+        printf("ERROR: failed to GET unknown URL\n");
+        goto done;
+    }
+    print_last_reply();
 
     /* POST some data to the API endpoint with custom query.
        Requests don't have to be explicitly confirmed by the agent
@@ -214,13 +301,14 @@ int main(int argc, char const *argv[])
             REQUEST_TIMEOUT,
             API_ID,
             NANO_HttpMethod_to_flags(NANO_HTTPMETHOD_POST),
-            POST_QUERY, strlen(POST_QUERY) /* query */,
-            POST_DATA, strlen(POST_DATA) /* data */,
-            POST_METADATA, strlen(POST_METADATA) /* metadata */))
+            POST_QUERY, sizeof(POST_QUERY) - 1 /* query */,
+            POST_DATA, sizeof(POST_DATA) - 1 /* data */,
+            POST_METADATA, sizeof(POST_METADATA) - 1 /* metadata */))
     {
         printf("ERROR: failed to POST api\n");
         goto done;
     }
+    print_last_reply();
 
     /* Requests can also be sent asynchronously */
     if (NANO_RETCODE_OK !=
@@ -232,9 +320,9 @@ int main(int argc, char const *argv[])
             REQUEST_TIMEOUT,
             API_ID,
             NANO_HttpMethod_to_flags(NANO_HTTPMETHOD_POST),
-            POST_QUERY, strlen(POST_QUERY) /* query */,
-            JSON_POST_DATA, strlen(JSON_POST_DATA) /* data */,
-            JSON_POST_METADATA, strlen(JSON_POST_METADATA) /* metadata */))
+            POST_QUERY, sizeof(POST_QUERY) - 1 /* query */,
+            JSON_POST_DATA, sizeof(JSON_POST_DATA) - 1 /* data */,
+            JSON_POST_METADATA, sizeof(JSON_POST_METADATA) - 1 /* metadata */))
     {
         printf("ERROR: failed to POST json api\n");
         goto done;
@@ -252,7 +340,9 @@ int main(int argc, char const *argv[])
     if (result.status != NANO_XRCE_STATUS_OK)
     {
         printf("ERROR: failed to submit HTTP request\n");
+        goto disconnect;
     }
+    print_last_reply();
 
 disconnect:
 
@@ -269,6 +359,15 @@ disconnect:
     }
 
     NANO_XRCE_Client_finalize(client);
+
+    if (last_reply.data != NULL)
+    {
+        free(last_reply.data);
+    }
+    if (last_reply.metadata != NULL)
+    {
+        free(last_reply.metadata);
+    }
 
     rc = 0;
 done:

@@ -34,7 +34,7 @@
 
 #define CLIENT_KEY              0x01020304
 
-#define SEARCH_ID               0xC12F
+#define GOOGLE_ID               0xDF2F
 
 #define LOG_LEVEL               LEVEL_INFO
 
@@ -169,9 +169,9 @@ int main(int argc, char const *argv[])
             NANO_XRCE_STREAMID_BUILTIN_RELIABLE,
             NANO_XRCE_REQUESTFLAGS_SYNC,
             REQUEST_TIMEOUT,
-            SEARCH_ID,
+            GOOGLE_ID,
             NANO_HttpMethod_to_flags(NANO_HTTPMETHOD_GET),
-            "?q=DDS-XRCE", strlen("?q=DDS-XRCE") /* query */,
+            "search?q=DDS-XRCE", sizeof("search?q=DDS-XRCE") - 1  /* query */,
             NULL, 0 /* data */,
             NULL, 0 /* metadata */))
     {
