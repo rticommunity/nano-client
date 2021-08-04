@@ -22,7 +22,10 @@ project(example-http-client C)
 
 find_package(nano-client CONFIG REQUIRED COMPONENTS transportudpv4)
 
-set(examples_http     http-client-udp)
+set(examples_http
+    http-client-udp
+    google-search-udp
+)
 
 foreach(example IN LISTS examples_http)
     add_executable(${example}           ${example}.c)

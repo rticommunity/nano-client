@@ -23,4 +23,7 @@
         <service_resource name="root" path="/"/>
         <service_resource name="api_endpoint" path="/my_api.cgi"/>
     </external_service>
+    <external_service name="google" plugin="http" url="http://www.google.com">
+        <service_resource name="search" path="/search"/>
+    </external_service>
 </dds>
