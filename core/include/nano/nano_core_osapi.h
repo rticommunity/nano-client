@@ -2511,14 +2511,12 @@ NANO_Sequence_flags_unset(
 
 #define NANO_TSeqImpl_set_contiguous_buffer_primitive(s_,b_,m_,l_) \
 {\
-    NANO_RetCode rc_ = NANO_RETCODE_ERROR;\
-    rc_ = NANO_Sequence_set_contiguous_buffer(\
-                &(s_)->base,(NANO_u8*)(b_),(m_),(l_));\
-    if (rc_ == NANO_RETCODE_OK) \
-    {\
-        NANO_OSAPI_Memory_zero((b_),(m_)*(s_)->base.el_size);\
-    }\
-    rc_;\
+    NANO_Sequence_set_contiguous_buffer(&(s_)->base,(NANO_u8*)(b_),(m_),(l_));\
+}
+
+#define NANO_TSeqImpl_set_serialized_buffer_primitive(s_,b_,mx_,le_) \
+{\
+    NANO_Sequence_set_serialized_buffer(&(s_)->base,(NANO_u8*)(b_),(mx_),(s_)->base.el_size,(le_));\
 }
 
 #define NANO_TSeqImpl_finalize(s_) \

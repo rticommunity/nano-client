@@ -480,9 +480,13 @@ NANO_XRCE_ObjectKind_initialize(
  */
 #define NANO_XRCE_OBJK_CLIENT           ((NANO_XRCE_ObjectKind)0x0E)
 /*e
- * @brief NANO_XRCE_ObjectKind value for HTTP Resource instances.
+ * @brief NANO_XRCE_ObjectKind value for Service instances.
  */
-#define NANO_XRCE_OBJK_HTTP             ((NANO_XRCE_ObjectKind)0x1F)
+#define NANO_XRCE_OBJK_SERVICE          ((NANO_XRCE_ObjectKind)0x1F)
+/*e
+ * @brief NANO_XRCE_ObjectKind value for Service Resource instances.
+ */
+#define NANO_XRCE_OBJK_SERVICE_RESOURCE ((NANO_XRCE_ObjectKind)0x2F)
 
 /*e
  * @brief Check if a NANO_XRCE_ObjectKind is valid.
@@ -507,7 +511,8 @@ NANO_XRCE_ObjectKind_is_valid(const NANO_XRCE_ObjectKind self);
     (k_) == NANO_XRCE_OBJK_APPLICATION || \
     (k_) == NANO_XRCE_OBJK_AGENT || \
     (k_) == NANO_XRCE_OBJK_CLIENT || \
-    (k_) == NANO_XRCE_OBJK_HTTP)
+    (k_) == NANO_XRCE_OBJK_SERVICE || \
+    (k_) == NANO_XRCE_OBJK_SERVICE_RESOURCE)
 
 NANO_bool
 NANO_XRCE_ObjectKinid_is_extended(const NANO_XRCE_ObjectKind self);
@@ -1238,5 +1243,71 @@ typedef struct NANODllExport NANO_XRCE_ContentFilterExprI
 /*i @} *//* nano_api_xrce_payload_support_contentfilter */
 
 #endif /* NANO_FEAT_OBJECT_KIND_DATAREADER */
+
+
+/******************************************************************************
+ *                              BinData
+ ******************************************************************************/
+
+/*i
+ * @addtogroup  nano_api_xrce_payload_support_bindata
+ * @{
+ */
+
+#if NANO_FEAT_TYPED_SEQUENCE
+#define T           NANO_u8
+#define TSeq        NANO_XRCE_BinData
+#define TSeq_API    NANO_SEQUENCE_API_LEVEL_TYPED
+
+#include "nano/nano_core_osapi_seq_decl.h"
+
+#define NANO_XRCE_BINDATA_INITIALIZER \
+        NANO_TSEQIMPL_INITIALIZER(NANO_u8)
+
+#define NANO_XRCE_BinData_initialize(s_) \
+    NANO_TSeqImpl_initialize(s_, NANO_u8)
+
+#define NANO_XRCE_BinData_set_contiguous_buffer(s_,b_,m_,l_) \
+    NANO_TSeqImpl_set_contiguous_buffer_primitive((s_), (b_), (m_), (l_))
+
+#define NANO_XRCE_BinData_set_serialized_buffer(s_,b_,mx_,le_) \
+    NANO_TSeqImpl_set_serialized_buffer_primitive((s_), (b_), (mx_), (le_))
+
+#define NANO_XRCE_BinData_finalize(s_) \
+    NANO_TSeqImpl_finalize(s_)
+    
+#define NANO_XRCE_BinData_initialized(s_) \
+    NANO_TSeqImpl_initialized(s_)
+
+#define NANO_XRCE_BinData_as_seq(s_) \
+    NANO_TSeqImpl_as_seq(s_)
+    
+#define NANO_XRCE_BinData_as_seq_mut(s_) \
+    NANO_TSeqImpl_as_seq_mut(s_)
+    
+#define NANO_XRCE_BinData_reference(s_,i_) \
+    NANO_TSeqImpl_reference(s_,i_, NANO_u8)
+    
+#define NANO_XRCE_BinData_reference_mut(s_,i_) \
+    NANO_TSeqImpl_reference_mut(s_,i_, NANO_u8)
+
+#define NANO_XRCE_BinData_contiguous_buffer(s_) \
+    NANO_TSeqImpl_contiguous_buffer(s_, NANO_u8)
+    
+#define NANO_XRCE_BinData_contiguous_buffer_mut(s_) \
+    NANO_TSeqImpl_contiguous_buffer_mut(s_, NANO_u8)
+    
+#define NANO_XRCE_BinData_maximum(s_) \
+    NANO_TSeqImpl_maximum(s_)
+    
+#define NANO_XRCE_BinData_length(s_) \
+    NANO_TSeqImpl_length(s_)
+    
+#define NANO_XRCE_BinData_set_length(s_, l_) \
+    NANO_TSeqImpl_set_length(s_,l_)
+
+#endif /* NANO_FEAT_TYPED_SEQUENCE */
+
+/*i @} *//* nano_api_xrce_payload_support_bindata */
 
 #endif /* nano_core_xrce_basic_h */

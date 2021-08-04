@@ -116,6 +116,7 @@ set(${lib_prefix}_INCLUDE_FILES_PUBLIC
         include/nano/nano_core_osapi.h
         include/nano/nano_core_cdr_basic.h
         include/nano/nano_core_cdr_xrce.h
+        include/nano/nano_core_cdr_agent.h
         include/nano/nano_core_cdr.h
         include/nano/nano_core_log.h
         include/nano/nano_core_log_impl_printf.h
@@ -126,7 +127,8 @@ set(${lib_prefix}_INCLUDE_FILES_PUBLIC
         include/nano/nano_core_xrce_activity.h
         include/nano/nano_core_xrce_session.h
         include/nano/nano_core_xrce_transport.h
-        include/nano/nano_core_xrce.h)
+        include/nano/nano_core_xrce.h
+        include/nano/nano_core_http.h)
 
 set(${lib_prefix}_SOURCE_FILES
         src/osapi/BufferPool.c

@@ -711,4 +711,92 @@ done:
 
 #endif /* NANO_FEAT_TIME_SYNC */
 
+#if NANO_FEAT_SERVICE_CLIENT && NANO_FEAT_AGENT
+/******************************************************************************
+ *                              ServiceRequest
+ ******************************************************************************/
+NANO_RetCode
+NANO_XRCE_ServiceRequestPayload_deserialize_cdr(
+    NANO_XRCE_ServiceRequestPayload *const self,
+    NANO_CDR_Stream *const stream)
+{
+    NANO_RetCode rc = NANO_RETCODE_ERROR;
+
+    NANO_LOG_FN_ENTRY
+    
+    NANO_CHECK_RC(
+        NANO_XRCE_BaseObjectRequest_deserialize_cdr(&self->base, stream),
+        NANO_LOG_ERROR_MSG("FAILED to DESERIALIZE BaseObjectRequest"));
+
+    NANO_CHECK_RC(
+      NANO_u16_deserialize_cdr(&self->flags, stream),
+      NANO_LOG_ERROR_MSG("FAILED to DESERIALIZE service request flags"));
+    
+    NANO_CHECK_RC(
+      NANO_u16_deserialize_cdr(&self->query_len, stream),
+      NANO_LOG_ERROR_MSG("FAILED to DESERIALIZE service request query"));
+
+    NANO_CHECK_RC(
+      NANO_u32_deserialize_cdr(&self->data_len, stream),
+      NANO_LOG_ERROR_MSG("FAILED to DESERIALIZE service request data length"));
+    
+    NANO_CHECK_RC(
+      NANO_u32_deserialize_cdr(&self->metadata_len, stream),
+      NANO_LOG_ERROR_MSG("FAILED to DESERIALIZE service request metadata length"));
+    
+    NANO_CHECK_RC(
+      NANO_bool_deserialize_cdr(&self->has_payload, stream),
+      NANO_LOG_ERROR_MSG("FAILED to DESERIALIZE service request has_payload"));
+    
+    if (self->has_payload)
+    {
+      NANO_XRCE_BinData_initialize(&self->payload);
+      NANO_XRCE_BinData_set_serialized_buffer(
+          &self->payload,
+          NANO_CDR_Stream_head(stream),
+          NANO_CDR_Stream_capacity(stream),
+          NANO_CDR_Stream_endianness(stream));
+    }
+
+    rc = NANO_RETCODE_OK;
+done:
+    NANO_LOG_FN_EXIT_RC(rc)
+    return rc;
+}
+
+NANO_RetCode
+NANO_XRCE_ServiceReplyPayload_serialize_cdr(
+    const NANO_XRCE_ServiceReplyPayload *const self,
+    NANO_CDR_Stream *const stream)
+{
+    NANO_RetCode rc = NANO_RETCODE_ERROR;
+    
+    NANO_CHECK_RC(
+        NANO_XRCE_BaseObjectReply_serialize_cdr(&self->base, stream),
+        NANO_LOG_ERROR_MSG("FAILED to SERIALIZE BaseObjectReply"));
+
+    NANO_CHECK_RC(
+      NANO_u16_serialize_cdr(&self->status, stream),
+      NANO_LOG_ERROR_MSG("FAILED to SERIALIZE service reply status"));
+
+    NANO_CHECK_RC(
+      NANO_u32_serialize_cdr(&self->data_len, stream),
+      NANO_LOG_ERROR_MSG("FAILED to SERIALIZE service reply data length"));
+    
+    NANO_CHECK_RC(
+      NANO_u32_serialize_cdr(&self->metadata_len, stream),
+      NANO_LOG_ERROR_MSG("FAILED to SERIALIZE service reply metadata length"));
+    
+    NANO_CHECK_RC(
+      NANO_bool_serialize_cdr(&self->has_payload, stream),
+      NANO_LOG_ERROR_MSG("FAILED to SERIALIZE service reply has_payload"));
+
+    rc = NANO_RETCODE_OK;
+done:
+    return rc;
+}
+#endif /* NANO_FEAT_SERVICE_CLIENT */
+
+
+
 #endif /* NANO_FEAT_CDR */

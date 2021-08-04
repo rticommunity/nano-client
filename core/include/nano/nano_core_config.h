@@ -649,13 +649,13 @@
 #endif /* NANO_FEAT_NATIVE_F128 */
 
 
-#ifndef NANO_FEAT_HTTP_CLIENT
+#ifndef NANO_FEAT_SERVICE_CLIENT
 /*i
- * @brief Enable support for performing HTTP requests over XRCE.
+ * @brief Enable support for performing requests to external services over XRCE.
  *
  */
-#define NANO_FEAT_HTTP_CLIENT                   1
-#endif /* NANO_FEAT_HTTP_CLIENT */
+#define NANO_FEAT_SERVICE_CLIENT                   1
+#endif /* NANO_FEAT_SERVICE_CLIENT */
 
 /******************************************************************************
  *                             Resource Limits

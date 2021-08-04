@@ -288,9 +288,13 @@ NANO_XRCE_InlineHeaderBuffer_update_next(
 /* The maximum size of an "inline payload" depends on the enabled 
    features. At a minimum, it must be big enough to hold a CREATE_CLIENT
    submessage (14-16-20). Next biggest payloads are CREATE (12), and
-   READ_DATA (8-[8+1+4+padding=16]). There is also HTTP_REQUEST (12). */
+   READ_DATA (8-[8+1+4+padding=16]). There is now also SERVICE_REQUEST (20)
+   which takes precedence if enabled. */
 
-#if NANO_FEAT_CONTENT_FILTER && \
+#if NANO_FEAT_SERVICE_CLIENT
+#define NANO_XRCE_STREAM_INLINE_PAYLOAD_HEADER_SIZE \
+    NANO_XRCE_SERVICEREQUESTPAYLOAD_HEADER_SERIALIZED_SIZE_MAX
+#elif NANO_FEAT_CONTENT_FILTER && \
     (!NANO_FEAT_PROPERTY || \
         !NANO_FEAT_TYPED_SEQUENCE || \
         !NANO_FEAT_MTU_IN_CLIENT_REPR)
@@ -1194,7 +1198,7 @@ NANO_XRCE_ReliableStream_initialize(
     *(s_) = def_stream_;\
     NANO_XRCE_Stream_initialize(\
         &(s_)->base, (st_), (ss_), (k_), (sid_));\
-    NANO_XRCE_ReliableStream_reset_state((s_),NULL);\
+    NANO_XRCE_ReliableStream_reset_state((s_),NULL,NANO_BOOL_FALSE /* finalized */);\
 }
 
 #if NANO_FEAT_AGENT
@@ -1254,9 +1258,10 @@ NANO_XRCE_ReliableStream_queue_send(
 void
 NANO_XRCE_ReliableStream_reset_state(
     NANO_XRCE_ReliableStream *const self,
-    NANO_XRCE_Session *const paren_session);
+    NANO_XRCE_Session *const paren_session,
+    const NANO_bool finalized);
 
-#define NANO_XRCE_ReliableStream_reset_state(s_,ps_) \
+#define NANO_XRCE_ReliableStream_reset_state(s_,ps_,f_) \
 {\
     NANO_XRCE_Session *sess_ = (ps_);\
     NANO_XRCE_SeqNum def_sn_ = NANO_XRCE_SEQNUM_INITIALIZER;\
@@ -1265,7 +1270,8 @@ NANO_XRCE_ReliableStream_reset_state(
     if (mbuf_send_queue_tail_ != NULL && sess_ != NULL)\
     {\
         if (0 == NANO_XRCE_Session_dismiss_send_queue_up_to(sess_, (s_), \
-                    NANO_XRCE_InlineHeaderBuffer_sn(mbuf_send_queue_tail_)))\
+                    NANO_XRCE_InlineHeaderBuffer_sn(mbuf_send_queue_tail_),\
+                    (f_) /* confirmed if finalized */))\
         {\
             NANO_LOG_ERROR("FAILED to dismiss send queue",\
                 NANO_LOG_KEY("session.key", *NANO_XRCE_Session_key(sess_))\
@@ -2039,7 +2045,7 @@ NANO_XRCE_Session_finalize(NANO_XRCE_Session *const self);
 #if NANO_FEAT_AGENT
 #define NANO_XRCE_Session_finalize(s_) \
 {\
-    NANO_XRCE_Session_reset_state((s_));\
+    NANO_XRCE_Session_reset_state((s_), DDS_BOOLEAN_TRUE /* finalize */);\
     NANO_XRCE_ClientTransport_finalize((s_)->transport);\
     (s_)->transport = NULL;\
     NANO_XRCE_ReliableStream_finalize(&(s_)->stream_builtin_rel);\
@@ -2081,7 +2087,7 @@ NANO_XRCE_Session_disconnected(NANO_XRCE_Session *const self);
         NANO_XRCE_Stream_update_sessionid(&(s_)->stream_none.base,\
             NANO_XRCE_SESSIONID_NONE_WITHOUT_CLIENT);\
     }\
-    NANO_XRCE_Session_reset_state((s_));\
+    NANO_XRCE_Session_reset_state((s_), NANO_BOOL_FALSE /* finalize */);\
 }
 
 NANO_XRCE_ClientKey*
@@ -2169,7 +2175,8 @@ NANO_usize
 NANO_XRCE_Session_dismiss_send_queue_up_to(
     NANO_XRCE_Session *const self,
     NANO_XRCE_ReliableStream *const stream_recv,
-    const NANO_XRCE_SeqNum *const msg_sn);
+    const NANO_XRCE_SeqNum *const msg_sn,
+    const NANO_bool confirmed);
 
 #if NANO_FEAT_AGENT
 NANO_RetCode
@@ -2207,7 +2214,9 @@ NANO_XRCE_Session_run(
     const NANO_Timeout timeout_ms);
 
 void
-NANO_XRCE_Session_reset_state(NANO_XRCE_Session *const self);
+NANO_XRCE_Session_reset_state(
+    NANO_XRCE_Session *const self,
+    const NANO_bool finalized);
 
 #if NANO_FEAT_SESSION_USER_STREAMS_BESTEFFORT
 #define NANO_XRCE_Session_reset_state_user_streams_be(s_) \
@@ -2226,7 +2235,7 @@ NANO_XRCE_Session_reset_state(NANO_XRCE_Session *const self);
 #endif /* NANO_FEAT_SESSION_USER_STREAMS_BESTEFFORT */
 
 #if NANO_FEAT_SESSION_USER_STREAMS_RELIABLE
-#define NANO_XRCE_Session_reset_state_user_streams_rel(s_) \
+#define NANO_XRCE_Session_reset_state_user_streams_rel(s_, f_) \
 {\
     NANO_usize i_ = 0;\
     for (i_ = 0;\
@@ -2234,7 +2243,7 @@ NANO_XRCE_Session_reset_state(NANO_XRCE_Session *const self);
             i_ < (s_)->storage->streams->user_streams_rel_len; i_++)\
     {\
         NANO_XRCE_ReliableStream_reset_state(\
-            &(s_)->storage->streams->user_streams_rel[i_], (s_));\
+            &(s_)->storage->streams->user_streams_rel[i_], (s_), (f_));\
     }\
 }
 #else
@@ -2242,9 +2251,9 @@ NANO_XRCE_Session_reset_state(NANO_XRCE_Session *const self);
 #endif /* NANO_FEAT_SESSION_USER_STREAMS_RELIABLE */
 
 #if NANO_FEAT_RELIABILITY
-#define NANO_XRCE_Session_reset_state_reliability(s_) \
+#define NANO_XRCE_Session_reset_state_reliability(s_,f_) \
 {\
-    NANO_XRCE_ReliableStream_reset_state(&(s_)->stream_builtin_rel, (s_));\
+    NANO_XRCE_ReliableStream_reset_state(&(s_)->stream_builtin_rel, (s_), (f_));\
     (s_)->ts_last_periodic_ack = 0;\
     (s_)->ts_last_periodic_hb = 0;\
 }
@@ -2253,12 +2262,12 @@ NANO_XRCE_Session_reset_state(NANO_XRCE_Session *const self);
 #endif /* NANO_FEAT_RELIABILITY */
 
 
-#define NANO_XRCE_Session_reset_state(s_) \
+#define NANO_XRCE_Session_reset_state(s_,f_) \
 {\
     NANO_XRCE_Stream_reset_state(&(s_)->stream_builtin_be.base);\
-    NANO_XRCE_Session_reset_state_reliability(s_);\
-    NANO_XRCE_Session_reset_state_user_streams_be(s_);\
-    NANO_XRCE_Session_reset_state_user_streams_rel(s_);\
+    NANO_XRCE_Session_reset_state_reliability((s_),(f_));\
+    NANO_XRCE_Session_reset_state_user_streams_be((s_));\
+    NANO_XRCE_Session_reset_state_user_streams_rel((s_),(f_));\
 }
 
 NANO_bool

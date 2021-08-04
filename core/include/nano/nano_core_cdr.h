@@ -21,5 +21,6 @@
 
 #include "nano/nano_core_cdr_basic.h"
 #include "nano/nano_core_cdr_xrce.h"
+#include "nano/nano_core_cdr_agent.h"
 
 #endif /* nano_core_cdr_h */

@@ -1,0 +1,17 @@
+#!/bin/sh
+echo "Content-type: text/html"
+echo ""
+echo "<html>"
+echo "<head><title>Hello HTTP/XRCE</title></head>"
+echo "<body>"
+echo "<h1>Request Info</h1>"
+echo "<h2>Query arguments:</h2>"
+echo "<pre>"
+printf "%s\n" "${QUERY_STRING}"
+echo "</pre>"
+echo "<h2>POST'ed data:</h2>"
+echo "<pre>"
+cat -
+echo "</pre>"
+echo "</body>"
+echo "</html>"

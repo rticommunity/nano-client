@@ -172,30 +172,32 @@ typedef void
         NANO_bool *const select);
 #endif /* NANO_FEAT_AGENT_DISCOVERY */
 
-#if NANO_FEAT_HTTP_CLIENT
+#if NANO_FEAT_SERVICE_CLIENT
 /*e
  * @brief TODO
  *
  * @param self
  * @param client
- * @param http_request
- * @param http_resource
- * @param http_status
+ * @param svc_request
+ * @param svc_resource
+ * @param svc_flags
  * @param little_endian
  * @param data
  * @param data_len
  */
 typedef void
-    (*NANO_XRCE_ClientListener_OnHttpReplyFn)(
+    (*NANO_XRCE_ClientListener_OnServiceReplyFn)(
         NANO_XRCE_ClientListener *const self,
         NANO_XRCE_Client *const client,
-        const NANO_XRCE_RequestId *const http_request,
-        const NANO_XRCE_ObjectId *const http_resource,
-        const NANO_XRCE_HttpStatus http_status,
+        const NANO_XRCE_RequestId *const svc_request,
+        const NANO_XRCE_ObjectId *const svc_resource,
         const NANO_bool little_endian,
+        const NANO_XRCE_ServiceReplyStatus svc_status,
         const NANO_u8 *const data,
-        const NANO_usize data_len);
-#endif /* NANO_FEAT_HTTP_CLIENT */
+        const NANO_usize data_len,
+        const NANO_u8 *const metadata,
+        const NANO_usize metadata_len);
+#endif /* NANO_FEAT_SERVICE_CLIENT */
 
 /*e
  * @brief TODO
@@ -238,13 +240,13 @@ struct NANO_XRCE_ClientListenerI
      */
     NANO_XRCE_ClientListener_OnAgentDiscoveredFn on_agent_discovered;
 #endif /* NANO_FEAT_AGENT_DISCOVERY */
-#if NANO_FEAT_HTTP_CLIENT
+#if NANO_FEAT_SERVICE_CLIENT
     /*e
      * @brief TODO
      *
      */
-    NANO_XRCE_ClientListener_OnHttpReplyFn on_http_reply;
-#endif /* NANO_FEAT_HTTP_CLIENT */
+    NANO_XRCE_ClientListener_OnServiceReplyFn on_service_reply;
+#endif /* NANO_FEAT_SERVICE_CLIENT */
     /*e
      * @brief TODO
      * 
@@ -310,12 +312,12 @@ struct NANO_XRCE_ClientListenerI
 #define NANO_XRCE_CLIENTLISTENER_DISCOVERY_INITIALIZER
 #endif /* NANO_FEAT_AGENT_DISCOVERY */
 
-#if NANO_FEAT_HTTP_CLIENT
-#define NANO_XRCE_CLIENTLISTENER_HTTP_INITIALIZER \
+#if NANO_FEAT_SERVICE_CLIENT
+#define NANO_XRCE_CLIENTLISTENER_SERVICE_INITIALIZER \
     NULL,
 #else
-#define NANO_XRCE_CLIENTLISTENERHTTP_INITIALIZER
-#endif /* NANO_FEAT_HTTP_CLIENT */
+#define NANO_XRCE_CLIENTLISTENER_SERVICE_INITIALIZER
+#endif /* NANO_FEAT_SERVICE_CLIENT */
 
 /*e
  * @brief TODO
@@ -327,7 +329,7 @@ struct NANO_XRCE_ClientListenerI
     NANO_XRCE_CLIENTLISTENER_RELIABILITY_INITIALIZER /* reliability */\
     NANO_XRCE_CLIENTLISTENER_INFO_INITIALIZER /* info */\
     NANO_XRCE_CLIENTLISTENER_DISCOVERY_INITIALIZER /* discovery */\
-    NANO_XRCE_CLIENTLISTENER_HTTP_INITIALIZER /* http */\
+    NANO_XRCE_CLIENTLISTENER_SERVICE_INITIALIZER /* service */\
     NULL /* user_data */\
 }
 
@@ -421,26 +423,28 @@ NANO_XRCE_ClientListener_on_agent_discovered(
 }
 #endif /* NANO_FEAT_AGENT_DISCOVERY */
 
-#if NANO_FEAT_HTTP_CLIENT
+#if NANO_FEAT_SERVICE_CLIENT
 void
-NANO_XRCE_ClientListener_on_http_reply(
+NANO_XRCE_ClientListener_on_service_reply(
     NANO_XRCE_ClientListener *const self,
     NANO_XRCE_Client *const client,
-    const NANO_XRCE_RequestId *const http_request,
-    const NANO_XRCE_ObjectId *const http_resource,
-    const NANO_XRCE_HttpStatus http_status,
+    const NANO_XRCE_RequestId *const svc_request,
+    const NANO_XRCE_ObjectId *const svc_resource,
     const NANO_bool little_endian,
+    const NANO_XRCE_ServiceReplyStatus svc_status,
     const NANO_u8 *const data,
-    const NANO_usize data_len);
+    const NANO_usize data_len,
+    const NANO_u8 *const metadata,
+    const NANO_usize metadata_len);
 
-#define NANO_XRCE_ClientListener_on_http_reply(s_,c_,hreq_,hres_,hst_,le_,d_,dlen_)\
+#define NANO_XRCE_ClientListener_on_service_reply(s_,c_,sreq_,sres_,sf_,le_,d_,dlen_,md_,mdlen_)\
 {\
-    if ((s_)->on_http_reply != NULL)\
+    if ((s_)->on_service_reply != NULL)\
     {\
-        (s_)->on_http_reply((s_), (c_), (hreq_), (hres_), (hst_),le_,d_,dlen_);\
+        (s_)->on_service_reply((s_), (c_), (sreq_), (sres_), (sf_), (le_), (d_), (dlen_), (md_), (mdlen_));\
     }\
 }
-#endif /* NANO_FEAT_HTTP_CLIENT */
+#endif /* NANO_FEAT_SERVICE_CLIENT */
 
 /** @} *//* nano_api_clientlistener */
 
@@ -511,6 +515,11 @@ typedef NANO_u16 NANO_XRCE_RequestFlags;
  * 
  */
 #define NANO_XRCE_REQUESTFLAGS_CUSTOM_ENDIANNESS    (0x01 << 9)
+/*e
+ * @brief TODO
+ * 
+ */
+#define NANO_XRCE_REQUESTFLAGS_ONEWAY               (0x01 << 10)
 /*e
  * @brief TODO
  * 
@@ -2690,12 +2699,12 @@ NANO_XRCE_Client_liveliness_assertion_period(
 }
 #endif /* NANO_FEAT_ASSERT_LIVELINESS */
 
-#if NANO_FEAT_HTTP_CLIENT
+#if NANO_FEAT_SERVICE_CLIENT
 /*e
  * @brief TODO
  *
  */
-typedef struct NANODllExport NANO_XRCE_HttpArgsI
+typedef struct NANODllExport NANO_XRCE_ServiceArgsI
 {
     /*e
      * @brief TODO
@@ -2706,12 +2715,22 @@ typedef struct NANODllExport NANO_XRCE_HttpArgsI
      * @brief TODO
      *
      */
-    NANO_XRCE_HttpMethod method;
+    NANO_XRCE_ServiceRequestFlags flags;
     /*e
      * @brief TODO
      *
      */
-    const char * path;
+    NANO_u16 query_len;
+    /*e
+     * @brief TODO
+     *
+     */
+    NANO_u32 data_len;
+    /*e
+     * @brief TODO
+     *
+     */
+    NANO_u32 metadata_len;
     /*e
      * @brief TODO
      *
@@ -2723,50 +2742,77 @@ typedef struct NANODllExport NANO_XRCE_HttpArgsI
      * @brief TODO
      *
      */
-    NANO_XRCE_HttpArgsI()
+    NANO_XRCE_ServiceArgsI()
         : req(),
-          method(NANO_XRCE_HTTPMETHOD_UNKNOWN),
-          path(NULL),
+          flags(NANO_XRCE_SERVICEREQUESTFLAGS_UNKNOWN),
+          query_len(0),
+          data_len(0),
+          metadata_len(0),
           payload(NULL)
     {
 
     }
 #endif /* NANO_CPP */
-} NANO_XRCE_HttpArgs;
+} NANO_XRCE_ServiceArgs;
 
 /*e
  * @brief TODO
  *
  */
-#define NANO_XRCE_HTTPARGS_INITIALIZER \
+#define NANO_XRCE_SERVICEARGS_INITIALIZER \
 {\
     NANO_XRCE_REQUESTARGS_INITIALIZER, /* req */\
-    NANO_XRCE_HTTPMETHOD_UNKNOWN, /* method */\
-    NULL, /* path */\
+    NANO_XRCE_SERVICEREQUESTFLAGS_UNKNOWN, /* flags */\
+    0, /* query_len */\
+    0, /* data_len */\
+    0, /* metadata_len */\
     NULL /* payload */\
 }
 
+/*e
+ * @brief TODO
+ * 
+ * @param self 
+ * @param on_data 
+ * @param listener_ctx 
+ */
+void
+NANO_XRCE_Client_on_service_reply(
+    NANO_XRCE_Client *const self,
+    NANO_XRCE_ClientListener_OnServiceReplyFn on_svc_reply,
+    void *const listener_ctx);
+
+#define NANO_XRCE_Client_on_service_reply(s_, on_svc_reply_, ctx_) \
+{\
+    (s_)->listener.on_service_reply = (on_svc_reply_);\
+    (s_)->listener.user_data = (ctx_);\
+}
+
+
 NANODllExport
 NANO_RetCode
-NANO_XRCE_Client_http_request(
+NANO_XRCE_Client_service_request(
     NANO_XRCE_Client *const self,
     NANO_XRCE_ClientRequestToken *const request_token,
     const NANO_XRCE_StreamId request_stream,
     const NANO_XRCE_RequestFlags request_flags,
     const NANO_Timeout request_timeout_ms,
-    const NANO_u16 resource_id,
-    const NANO_XRCE_HttpMethod method,
-    const char * const path,
-    const NANO_u8 *const payload,
-    const NANO_u16 payload_len);
+    const NANO_u16 service_resource_id,
+    const NANO_XRCE_ServiceRequestFlags service_flags,
+    const NANO_u8 *const query,
+    const NANO_u16 query_len,
+    const NANO_u8 *const data,
+    const NANO_u32 data_len,
+    const NANO_u8 *const metadata,
+    const NANO_u32 metadata_len);
 
 NANODllExport
 NANO_RetCode
-NANO_XRCE_Client_http_request_w_args(
+NANO_XRCE_Client_service_request_w_args(
     NANO_XRCE_Client *const self,
     NANO_XRCE_ClientRequestToken *const request_token,
-    const NANO_XRCE_HttpArgs * const args);
-#endif /* NANO_FEAT_HTTP_CLIENT */
+    const NANO_XRCE_ServiceArgs * const args);
+#endif /* NANO_FEAT_SERVICE_CLIENT */
 
 
 #endif /* NANO_FEAT_EXTENDED_API */

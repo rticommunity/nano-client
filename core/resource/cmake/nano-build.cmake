@@ -671,7 +671,7 @@ function(nano_component_library var_prefix)
 
     if (prj_build_libraries)
     
-        message(STATUS "Configuring library: ${lib_tgt_alias}")
+        message(STATUS "Configuring library: ${lib_tgt}")
 
         add_library(${lib_tgt} ${lib_link_type}
             ${lib_include_pub}
@@ -763,7 +763,7 @@ function(nano_component_install var_prefix)
     nano_component_vars(${var_prefix})
 
     if (prj_build_libraries)
-        install(TARGETS                 ${lib_tgt}
+        install(TARGETS                 ${lib_tgt} ${ARGN}
             EXPORT                      ${lib_tgt_export}
             ARCHIVE DESTINATION         ${prj_install_dir_lib}
             LIBRARY DESTINATION         ${prj_install_dir_lib}

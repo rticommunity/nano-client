@@ -171,11 +171,11 @@ NANO_XRCE_Client_on_submessage(
     const NANO_u8 *ptr = NULL,
                   *ptra = NULL;
     NANO_usize remaining = 0;
-#define deserialize_begin(ptr_) \
+#define deserialize_begin(ptr_, remaining_) \
 {\
     ptr = (ptr_);\
     ptra = NULL;\
-    remaining = 0;\
+    remaining = (remaining_);\
 }
 #define check_deserialize(t_, fail_action_) \
 {\
@@ -190,11 +190,11 @@ NANO_XRCE_Client_on_submessage(
         req->result.status = NANO_XRCE_STATUS_ERR_INVALID_DATA;\
         fail_action_\
     }\
-    else\
-    {\
-      remaining -= sizeof(t_);\
-      ptr += sizeof(t_);\
-    }\
+}
+#define consume_deserialized(t_) \
+{\
+    remaining -= sizeof(t_);\
+    ptr += sizeof(t_);\
 }
     
     NANO_LOG_FN_ENTRY
@@ -302,6 +302,57 @@ NANO_XRCE_Client_on_submessage(
 
         req->result = status->base.result;
 
+
+        switch (req->submsg_id)
+        {
+#if NANO_FEAT_PUBLISH && NANO_FEAT_RELIABILITY
+        case NANO_XRCE_SUBMESSAGEID_WRITE_DATA:
+        {
+            if (NANO_XRCE_ClientRequest_is_acked(req))
+            {
+                NANO_XRCE_ClientListener_on_write_complete(
+                        &self->listener, self, req);
+            }
+            req->flags |= NANO_XRCE_REQUESTFLAGS_COMPLETE;
+            break;
+        }
+#endif /* NANO_FEAT_PUBLISH && NANO_FEAT_RELIABILITY */
+#if NANO_FEAT_SERVICE_CLIENT
+        case NANO_XRCE_SUBMESSAGEID_SERVICE_REQUEST:
+        {
+            if (NANO_XRCE_SubmessageFlags_SERVICEREQUEST_oneway(submsg_hdr->flags))
+            {
+                req->flags |= NANO_XRCE_REQUESTFLAGS_COMPLETE;
+                REQ_COMPLETE_LOG("one-way SERVICE_REQUEST complete",
+                    NANO_LOG_PTR("req", req)
+                    NANO_LOG_SN("req.sn", req->sn)
+                    NANO_LOG_H16("req.id", req->req_id))
+            }
+            else if (NANO_XRCE_STATUS_OK != req->result.status)
+            {
+                req->flags |= NANO_XRCE_REQUESTFLAGS_COMPLETE;
+                NANO_LOG_ERROR("SERVICE_REQUEST failed",
+                    NANO_LOG_PTR("req", req)
+                    NANO_LOG_SN("req.sn", req->sn)
+                    NANO_LOG_H16("req.id", req->req_id))
+            }
+            else
+            {
+                REQ_COMPLETE_LOG("SERVICE_REQUEST submitted",
+                    NANO_LOG_PTR("req", req)
+                    NANO_LOG_SN("req.sn", req->sn)
+                    NANO_LOG_H16("req.id", req->req_id))
+            }
+            break;
+        }
+#endif /* NANO_FEAT_SERVICE_CLIENT */
+        default:
+        {
+            req->flags |= NANO_XRCE_REQUESTFLAGS_COMPLETE;
+            break;
+        }
+        }
+
         REQ_COMPLETE_LOG("REQUEST COMPLETE", 
             NANO_LOG_PTR("req", req)
             NANO_LOG_SN("req.sn", req->sn)
@@ -312,19 +363,8 @@ NANO_XRCE_Client_on_submessage(
             NANO_LOG_H8("req.flags", req->submsg_flags)
             NANO_LOG_H32("req.status",req->result.status)
             NANO_LOG_RC(req->result.implementation_status)
-            NANO_LOG_SUBMSGHDR("status", *submsg_hdr))
-
-#if NANO_FEAT_PUBLISH && NANO_FEAT_RELIABILITY
-        if (req->submsg_id == NANO_XRCE_SUBMESSAGEID_WRITE_DATA &&
-            NANO_XRCE_ClientRequest_is_acked(req))
-        {
-            NANO_XRCE_ClientListener_on_write_complete(
-                    &self->listener, self, req);
-        }
-#endif /* NANO_FEAT_PUBLISH && NANO_FEAT_RELIABILITY */
-
-
-        req->flags |= NANO_XRCE_REQUESTFLAGS_COMPLETE;
+            NANO_LOG_SUBMSGHDR("status", *submsg_hdr)
+            NANO_LOG_BOOL("complete", req->flags & NANO_XRCE_REQUESTFLAGS_COMPLETE))
         break;
     }
 #if NANO_FEAT_SUBSCRIBE
@@ -430,8 +470,8 @@ NANO_XRCE_Client_on_submessage(
             goto done;
         }
 
-        remaining = submsg_hdr->length -
-                        NANO_XRCE_BASEOBJECTREPLY_SERIALIZED_SIZE_MAX;
+        remaining =
+            submsg_hdr->length - NANO_XRCE_BASEOBJECTREPLY_SERIALIZED_SIZE_MAX;
     
         NANO_LOG_DEBUG("received INFO message",
             NANO_LOG_REQID("req.id",reply->related_request.request_id)
@@ -441,10 +481,11 @@ NANO_XRCE_Client_on_submessage(
             NANO_LOG_USIZE("remaining_size", remaining)
             NANO_LOG_USIZE("reply_size", NANO_XRCE_BASEOBJECTREPLY_SERIALIZED_SIZE_MAX))
 
-        deserialize_begin(payload + NANO_XRCE_BASEOBJECTREPLY_SERIALIZED_SIZE_MAX);
+        deserialize_begin(payload + NANO_XRCE_BASEOBJECTREPLY_SERIALIZED_SIZE_MAX, remaining);
 
         check_deserialize(NANO_bool, goto release_info_req;);
         has_opt = *((NANO_bool*)ptr);
+        consume_deserialized(NANO_bool);
 
 #if NANO_FEAT_OBJECT_INFO_ACTIVITY
         info.has_activity = has_opt;
@@ -452,6 +493,7 @@ NANO_XRCE_Client_on_submessage(
         {
             check_deserialize(NANO_bool, goto release_info_req;);
             info.activity.kind = *((NANO_bool*)ptr);
+            consume_deserialized(NANO_bool);
             
             switch (info.activity.kind)
             {
@@ -464,6 +506,7 @@ NANO_XRCE_Client_on_submessage(
                     ptr,
                     NANO_XRCE_SubmessageFlags_is_little_endian(
                         submsg_hdr->flags));
+                consume_deserialized(NANO_i16);
 
                 check_deserialize(NANO_u32, goto release_info_req;);
                 NANO_u32_deserialize(
@@ -471,6 +514,7 @@ NANO_XRCE_Client_on_submessage(
                     ptr,
                     NANO_XRCE_SubmessageFlags_is_little_endian(
                         submsg_hdr->flags));
+                consume_deserialized(NANO_u32);
 
 #if NANO_FEAT_TYPED_SEQUENCE
 
@@ -590,6 +634,7 @@ NANO_XRCE_Client_on_submessage(
                     ptr,
                     NANO_XRCE_SubmessageFlags_is_little_endian(
                         submsg_hdr->flags));
+                consume_deserialized(NANO_u16);
                 break;
             }
             case NANO_XRCE_OBJK_DATAWRITER:
@@ -600,6 +645,7 @@ NANO_XRCE_Client_on_submessage(
                     ptr,
                     NANO_XRCE_SubmessageFlags_is_little_endian(
                         submsg_hdr->flags));
+                consume_deserialized(NANO_u64);
 
                 check_deserialize(NANO_u16, goto release_info_req;);
                 NANO_u16_deserialize(
@@ -607,6 +653,7 @@ NANO_XRCE_Client_on_submessage(
                     ptr,
                     NANO_XRCE_SubmessageFlags_is_little_endian(
                         submsg_hdr->flags));
+                consume_deserialized(NANO_u16);
                 break;
             }
             default:
@@ -623,6 +670,7 @@ NANO_XRCE_Client_on_submessage(
 
         check_deserialize(NANO_bool, goto release_info_req;);
         has_opt = *((NANO_bool*)ptr);
+        consume_deserialized(NANO_bool);
 
 #if NANO_FEAT_OBJECT_INFO_CONFIG
         info.has_config = has_opt;
@@ -654,20 +702,24 @@ release_info_req:
         break;
     }
 #endif /* NANO_FEAT_OBJECT_INFO */
-#if NANO_FEAT_HTTP_CLIENT
-    case NANO_XRCE_SUBMESSAGEID_HTTP_REPLY:
+#if NANO_FEAT_SERVICE_CLIENT
+    case NANO_XRCE_SUBMESSAGEID_SERVICE_REPLY:
     {
-        NANO_XRCE_HttpStatus http_status = NANO_XRCE_HTTPSTATUS_UNKNOWN;
+        NANO_XRCE_ServiceReplyStatus reply_status = NANO_XRCE_SERVICEREPLYSTATUS_UNKNOWN;
         const NANO_XRCE_BaseObjectReply *reply =
             (const NANO_XRCE_BaseObjectReply *)payload;
-        NANO_u32 http_data_len = 0;
+        NANO_u32 data_len = 0;
+        NANO_u32 metadata_len = 0;
+        const NANO_u8 *data_ptr = NULL,
+                      *metadata_ptr = NULL;
+        NANO_bool has_payload = NANO_BOOL_FALSE;
 
         if (submsg_hdr->length <
                 NANO_XRCE_BASEOBJECTREPLY_SERIALIZED_SIZE_MAX)
         {
-            NANO_LOG_WARNING("HTTP_REQUEST too short",
+            NANO_LOG_WARNING("SERVICE_REPLY too short",
                 NANO_LOG_U16("length", submsg_hdr->length))
-            goto done;
+            goto release_svc_req;
         }
 
         req_id = NANO_XRCE_RequestId_to_u16(&reply->related_request.request_id);
@@ -683,54 +735,107 @@ release_info_req:
         if (req == NULL)
         {
             NANO_LOG_WARNING(
-                "HTTP_REPLY received for unknown request",
+                "SERVICE_REPLY received for unknown request",
                 NANO_LOG_SESSIONID("session",msg_hdr->session_id)
                 NANO_LOG_STREAMID("stream",msg_hdr->stream_id)
                 NANO_LOG_U16("req_id", req_id))
-            goto done;
+            goto release_svc_req;
         }
 
-        remaining = submsg_hdr->length -
-                        NANO_XRCE_BASEOBJECTREPLY_SERIALIZED_SIZE_MAX;
+        if (NANO_XRCE_SubmessageFlags_SERVICEREQUEST_oneway(submsg_hdr->flags))
+        {
+            NANO_LOG_WARNING("unexpected SERVICE_REPLY",
+                NANO_LOG_U16("req", req->req_id))
+            goto release_svc_req;
+        }
 
-        NANO_LOG_DEBUG("received HTTP_REQUEST message",
+        remaining =
+            submsg_hdr->length - NANO_XRCE_BASEOBJECTREPLY_SERIALIZED_SIZE_MAX;
+
+        NANO_LOG_DEBUG("received SERVICE_REPLY message",
             NANO_LOG_REQID("req.id",reply->related_request.request_id)
             NANO_LOG_OBJID("req.obj_id",reply->related_request.object_id)
             NANO_LOG_H8("reply.result.status",reply->result.status)
             NANO_LOG_H8("reply.result.impl_status",reply->result.implementation_status)
             NANO_LOG_USIZE("remaining_size", remaining))
 
-        deserialize_begin(payload + NANO_XRCE_BASEOBJECTREPLY_SERIALIZED_SIZE_MAX);
+        deserialize_begin(payload + NANO_XRCE_BASEOBJECTREPLY_SERIALIZED_SIZE_MAX, remaining);
 
-        /* Deserialize HTTP status */
-        check_deserialize(NANO_u16, goto release_http_req;);
+        /* Deserialize reply status */
+        check_deserialize(NANO_u16, goto release_svc_req;);
         NANO_u16_deserialize(
-            &http_status,
+            &reply_status,
             ptr,
             NANO_XRCE_SubmessageFlags_is_little_endian(submsg_hdr->flags));
+        consume_deserialized(NANO_u16);
 
-        /* Deserialize data length */
-        check_deserialize(NANO_u32, goto release_http_req;);
+        /* Deserialize various length fields */
+        check_deserialize(NANO_u32, goto release_svc_req;);
         NANO_u32_deserialize(
-            &http_data_len,
+            &data_len,
             ptr,
             NANO_XRCE_SubmessageFlags_is_little_endian(submsg_hdr->flags));
+        consume_deserialized(NANO_u32);
+        
+        check_deserialize(NANO_u32, goto release_svc_req;);
+        NANO_u32_deserialize(
+            &metadata_len,
+            ptr,
+            NANO_XRCE_SubmessageFlags_is_little_endian(submsg_hdr->flags));
+        consume_deserialized(NANO_u32);
+        
+        /* Deserialize has_payload flag */
+        check_deserialize(NANO_bool, goto release_svc_req;);
+        has_payload = *((NANO_bool*)ptr);
+        consume_deserialized(NANO_bool);
 
-        NANO_XRCE_ClientListener_on_http_reply(
+        if (!has_payload && (data_len > 0 || metadata_len > 0))
+        {
+            NANO_LOG_WARNING("inconsistent SERVICE_REPLY",
+                NANO_LOG_BOOL("has_payload", has_payload)
+                NANO_LOG_U32("data_len", data_len)
+                NANO_LOG_U32("metadata_len", metadata_len))
+            goto release_svc_req;
+        }
+
+        NANO_LOG_DEBUG("deserialized SERVICE_REPLY",
+            NANO_LOG_USIZE("data_len", data_len)
+            NANO_LOG_USIZE("metadata_len", metadata_len)
+            NANO_LOG_BOOL("has_payload", has_payload))
+
+        if (data_len > 0)
+        {
+            data_ptr = ptr;
+        }
+        if (metadata_len > 0)
+        {
+            if (NULL != data_ptr)
+            {
+                metadata_ptr = data_ptr + data_len;
+            }
+            else
+            {
+                metadata_ptr = ptr;
+            }
+        }
+
+        NANO_XRCE_ClientListener_on_service_reply(
             &self->listener,
             self,
             &reply->related_request.request_id,
             &req->obj_id,
-            http_status,
             NANO_XRCE_SubmessageFlags_is_little_endian(submsg_hdr->flags),
-            ptr,
-            remaining);
+            reply_status,
+            data_ptr,
+            data_len,
+            metadata_ptr,
+            metadata_len);
 
-release_http_req:
+release_svc_req:
         req->flags |= NANO_XRCE_REQUESTFLAGS_COMPLETE;
         break;
     }
-#endif /* NANO_FEAT_HTTP_CLIENT */
+#endif /* NANO_FEAT_SERVICE_CLIENT */
     default:
     {
         NANO_LOG_DEBUG_MSG("submessage IGNORED")
@@ -760,6 +865,8 @@ NANO_XRCE_Client_on_send_complete(
 {
     NANO_XRCE_Client *self = NULL;
     NANO_XRCE_ClientRequest *req = NULL;
+    NANO_XRCE_SubmessageId msg_id = NANO_XRCE_SUBMESSAGEID_UNKNOWN;
+    NANO_XRCE_SubmessageFlags msg_flags = NANO_XRCE_SUBMESSAGEFLAGS_DEFAULT;
 
     NANO_LOG_FN_ENTRY
 
@@ -795,7 +902,18 @@ NANO_XRCE_Client_on_send_complete(
         req->flags |= NANO_XRCE_REQUESTFLAGS_ACKED;
     }
 
-    switch (submsg_hdr->id)
+    if (req != NULL)
+    {
+        msg_id = req->submsg_id;
+        msg_flags = req->submsg_flags;
+    }
+    else
+    {
+        msg_id = submsg_hdr->id;
+        msg_flags = submsg_hdr->flags;
+    }
+
+    switch (msg_id)
     {
 #if NANO_FEAT_PUBLISH
     case NANO_XRCE_SUBMESSAGEID_WRITE_DATA:
@@ -803,7 +921,7 @@ NANO_XRCE_Client_on_send_complete(
         NANO_XRCE_DataFormat data_fmt = NANO_XRCE_FORMAT_INVALID;
         NANO_bool dismiss_on_ack = NANO_BOOL_FALSE;
 
-        data_fmt = NANO_XRCE_SubmessageFlags_DATA_format(submsg_hdr->flags);
+        data_fmt = NANO_XRCE_SubmessageFlags_DATA_format(msg_flags);
         if (data_fmt == NANO_XRCE_FORMAT_INVALID)
         {
             return;
@@ -817,11 +935,14 @@ NANO_XRCE_Client_on_send_complete(
         dismiss_on_ack = NANO_BOOL_TRUE;
 #else
         dismiss_on_ack =
-            !NANO_XRCE_SubmessageFlags_WRITEDATA_confirm(submsg_hdr->flags);
+            !NANO_XRCE_SubmessageFlags_WRITEDATA_confirm(msg_flags);
 #endif /* NANO_FEAT_EPROSIMA */
         
         if (req != NULL && dismiss_on_ack)
         {
+            const NANO_XRCE_ResultStatus success_rc =
+                        { NANO_XRCE_STATUS_OK, NANO_RETCODE_OK };
+
             REQ_COMPLETE_LOG("WRITE_DATA complete",
                 NANO_LOG_PTR("data",
                     NANO_MessageBuffer_data_ptr(
@@ -830,9 +951,6 @@ NANO_XRCE_Client_on_send_complete(
                     NANO_MessageBuffer_data_len(
                         NANO_MessageBuffer_next(msg)))
                 NANO_LOG_BOOL("dismiss_on_ack", dismiss_on_ack))
-            
-            const NANO_XRCE_ResultStatus success_rc =
-                        { NANO_XRCE_STATUS_OK, NANO_RETCODE_OK };
         
             NANO_XRCE_ClientListener_on_write_complete(
                 &self->listener, self, req);
@@ -844,6 +962,41 @@ NANO_XRCE_Client_on_send_complete(
         break;
     }
 #endif /* NANO_FEAT_PUBLISH */
+#if NANO_FEAT_SERVICE_CLIENT
+    case NANO_XRCE_SUBMESSAGEID_SERVICE_REQUEST:
+    {
+        NANO_bool dismiss_on_ack = NANO_BOOL_FALSE,
+                  confirm = NANO_BOOL_FALSE,
+                  oneway = NANO_BOOL_FALSE;
+        NANO_XRCE_ObjectId obj_id = NANO_XRCE_OBJECTID_INVALID;
+        NANO_XRCE_RequestId req_id = NANO_XRCE_REQUESTID_INVALID;
+
+        confirm = NANO_XRCE_SubmessageFlags_SERVICEREQUEST_confirm(msg_flags);
+        oneway = NANO_XRCE_SubmessageFlags_SERVICEREQUEST_oneway(msg_flags);
+        dismiss_on_ack = oneway && !confirm;
+
+        if (req != NULL && dismiss_on_ack)
+        {
+            const NANO_XRCE_ResultStatus success_rc =
+                { NANO_XRCE_STATUS_OK, NANO_RETCODE_OK };
+
+            REQ_COMPLETE_LOG("one-way SERVICE_REQUEST complete",
+                NANO_LOG_PTR("data",
+                    NANO_MessageBuffer_data_ptr(
+                        NANO_MessageBuffer_next(msg)))
+                NANO_LOG_USIZE("data_len", 
+                    NANO_MessageBuffer_data_len(
+                        NANO_MessageBuffer_next(msg)))
+                NANO_LOG_BOOL("confirm", confirm)
+                NANO_LOG_BOOL("oneway", oneway))
+
+            req->result = success_rc;
+            req->flags |= NANO_XRCE_REQUESTFLAGS_COMPLETE;
+        }
+
+        break;
+    }
+#endif /* NANO_FEAT_SERVICE_CLIENT */
     default:
     {
 
@@ -1000,6 +1153,7 @@ NANO_XRCE_Client_new_request(
     NANO_XRCE_ClientRequestToken *const request_token,
     NANO_XRCE_ClientRequest **const request_out)
 {
+    static const NANO_XRCE_ResultStatus def_result = NANO_XRCE_RESULTSTATUS_INITIALIZER;
     NANO_usize i = 0;
     const NANO_XRCE_ClientRequestToken def_request_token =
         NANO_XRCE_CLIENTREQUESTTOKEN_INITIALIZER;
@@ -1062,6 +1216,10 @@ NANO_XRCE_Client_new_request(
         {
             submsg_flags |= NANO_XRCE_SUBMESSAGEFLAGS_WRITEDATA_CONFIRM;
         }
+        else if (submsg_id == NANO_XRCE_SUBMESSAGEID_SERVICE_REQUEST)
+        {
+            submsg_flags |= NANO_XRCE_SUBMESSAGEFLAGS_SERVICEREQUEST_CONFIRM;
+        }
     }
 
     if (request_flags & NANO_XRCE_REQUESTFLAGS_CUSTOM_ENDIANNESS)
@@ -1073,6 +1231,14 @@ NANO_XRCE_Client_new_request(
         else
         {
             submsg_flags &= ~NANO_XRCE_SUBMESSAGEFLAGS_ENDIANNESS;
+        }
+    }
+
+    if (request_flags & NANO_XRCE_REQUESTFLAGS_ONEWAY)
+    {
+        if (submsg_id == NANO_XRCE_SUBMESSAGEID_SERVICE_REQUEST)
+        {
+            submsg_flags |= NANO_XRCE_SUBMESSAGEFLAGS_SERVICEREQUEST_ONEWAY;
         }
     }
 
@@ -1131,7 +1297,11 @@ NANO_XRCE_Client_new_request(
     {
         req->obj_id = *object_id;
     }
-    
+    /* also reset request's result to success, since some requests might
+       not get an explicit STATUS (depending on request flags) */
+    req->result.implementation_status = NANO_RETCODE_OK;
+    req->result.status = NANO_XRCE_STATUS_OK;
+
     self->next_request = nxt_req_id;
 
     if (prev_req != NULL)
@@ -1150,7 +1320,8 @@ NANO_XRCE_Client_new_request(
 
     NEW_REQ_LOG("NEW request ",
         NANO_LOG_PTR("req", req)
-        NANO_LOG_H16("req.id", req->req_id))
+        NANO_LOG_H16("req.id", req->req_id)
+        NANO_LOG_STR("id", NANO_XRCE_SubmessageId_as_str(req->submsg_id)))
 
     if (request_token != NULL)
     {
@@ -1205,7 +1376,7 @@ NANO_XRCE_Client_release_request(
         NANO_PCOND(rel_stream != NULL)
 
         NANO_XRCE_Session_dismiss_send_queue_up_to(
-                &self->session, rel_stream, &req->sn);
+                &self->session, rel_stream, &req->sn, NANO_BOOL_FALSE /* confirmed */);
     }
 #endif /* NANO_FEAT_RELIABILITY */
 
@@ -1517,7 +1688,18 @@ NANO_XRCE_Client_return_or_wait_for_request(
     NANO_RetCode rc = NANO_RETCODE_ERROR;
     NANO_XRCE_ResultStatus request_result = NANO_XRCE_RESULTSTATUS_INITIALIZER;
     const NANO_bool sync = req->flags & NANO_XRCE_REQUESTFLAGS_SYNC,
-        dismiss = sync && req->submsg_id != NANO_XRCE_SUBMESSAGEID_READ_DATA;
+        confirmed = (
+            req->flags & NANO_XRCE_REQUESTFLAGS_CONFIRM ||
+            (req->submsg_id == NANO_XRCE_SUBMESSAGEID_SERVICE_REQUEST &&
+                !(req->flags & NANO_XRCE_REQUESTFLAGS_ONEWAY))
+        ),
+        dismiss = (sync && (
+            req->submsg_id != NANO_XRCE_SUBMESSAGEID_READ_DATA &&
+            req->submsg_id != NANO_XRCE_SUBMESSAGEID_SERVICE_REQUEST
+        )) || (
+            req->submsg_id == NANO_XRCE_SUBMESSAGEID_SERVICE_REQUEST &&
+            (sync || req->flags & NANO_XRCE_REQUESTFLAGS_ONEWAY)
+        );
     
     NANO_LOG_FN_ENTRY
     
@@ -1532,7 +1714,7 @@ NANO_XRCE_Client_return_or_wait_for_request(
 
     if (sync)
     {
-        if (req->flags & NANO_XRCE_REQUESTFLAGS_CONFIRM)
+        if (confirmed)
         {
             rc = NANO_XRCE_Client_wait_for_request(
                     self,
@@ -3151,110 +3333,155 @@ NANO_XRCE_Client_read_data(
 }
 
 
-#if NANO_FEAT_HTTP_CLIENT
+#if NANO_FEAT_SERVICE_CLIENT
 NANO_RetCode
-NANO_XRCE_Client_http_request(
+NANO_XRCE_Client_service_request(
     NANO_XRCE_Client *const self,
     NANO_XRCE_ClientRequestToken *const request_token,
     const NANO_XRCE_StreamId request_stream,
     const NANO_XRCE_RequestFlags request_flags,
     const NANO_Timeout request_timeout_ms,
-    const NANO_u16 resource_id,
-    const NANO_XRCE_HttpMethod method,
-    const char * const path,
-    const NANO_u8 *const payload,
-    const NANO_u16 payload_len)
+    const NANO_u16 service_resource_id,
+    const NANO_XRCE_ServiceRequestFlags service_flags,
+    const NANO_u8 *const query,
+    const NANO_u16 query_len,
+    const NANO_u8 *const data,
+    const NANO_u32 data_len,
+    const NANO_u8 *const metadata,
+    const NANO_u32 metadata_len)
 {
-    NANO_XRCE_HttpArgs http_args = NANO_XRCE_HTTPARGS_INITIALIZER;
-
+    NANO_XRCE_ServiceArgs svc_args = NANO_XRCE_SERVICEARGS_INITIALIZER;
+    NANO_MessageBuffer *next_mbuf = NULL,
+                       *payload_tail = NULL;
     NANO_LOG_FN_ENTRY
 
     NANO_PCOND(self != NULL)
 
-    http_args.payload =
-        NANO_XRCE_Client_allocate_message_buffer(
-            self, request_stream, payload, payload_len);
-    if (http_args.payload == NULL)
+    /* Concatenate query + data + metadata into a single "payload" */
+    if (NULL != query && query_len > 0)
     {
-        return NANO_RETCODE_OUT_OF_RESOURCES;
+      svc_args.payload =
+          NANO_XRCE_Client_allocate_message_buffer(
+              self, request_stream, query, query_len);
+      if (NULL == svc_args.payload)
+      {
+          return NANO_RETCODE_OUT_OF_RESOURCES;
+      }
+      payload_tail = svc_args.payload;
+      svc_args.query_len = query_len;
     }
 
-    http_args.method = method;
-    http_args.path = path;
-    http_args.req.stream_id = request_stream;
-    http_args.req.flags = request_flags;
-    http_args.req.timeout_ms = request_timeout_ms;
-    NANO_XRCE_ObjectId_from_u16(&http_args.req.obj_id, resource_id);
+    if (NULL != data && data_len > 0)
+    {
+      next_mbuf =
+          NANO_XRCE_Client_allocate_message_buffer(
+              self, request_stream, data, data_len);
+      if (NULL == next_mbuf)
+      {
+          return NANO_RETCODE_OUT_OF_RESOURCES;
+      }
+      if (NULL == svc_args.payload)
+      {
+          svc_args.payload = next_mbuf;
+      }
+      else
+      {
+          NANO_MessageBuffer_append(payload_tail, next_mbuf);
+      }
+      payload_tail = next_mbuf;
+      svc_args.data_len = data_len;
+    }
 
-    return NANO_XRCE_Client_http_request_w_args(self, request_token, &http_args);
+    if (NULL != metadata && metadata_len > 0)
+    {
+      next_mbuf =
+          NANO_XRCE_Client_allocate_message_buffer(
+              self, request_stream, metadata, metadata_len);
+      if (NULL == next_mbuf)
+      {
+          return NANO_RETCODE_OUT_OF_RESOURCES;
+      }
+      if (NULL == svc_args.payload)
+      {
+          svc_args.payload = next_mbuf;
+      }
+      else
+      {
+          NANO_MessageBuffer_append(payload_tail, next_mbuf);
+      }
+      payload_tail = next_mbuf;
+      svc_args.metadata_len = metadata_len;
+    }
+
+    svc_args.flags = service_flags;
+    svc_args.req.stream_id = request_stream;
+    svc_args.req.flags = request_flags;
+    svc_args.req.timeout_ms = request_timeout_ms;
+    NANO_XRCE_ObjectId_from_u16(&svc_args.req.obj_id, service_resource_id);
+
+    return NANO_XRCE_Client_service_request_w_args(self, request_token, &svc_args);
 }
 
 
 NANODllExport
 NANO_RetCode
-NANO_XRCE_Client_http_request_w_args(
+NANO_XRCE_Client_service_request_w_args(
     NANO_XRCE_Client *const self,
     NANO_XRCE_ClientRequestToken *const request_token,
-    const NANO_XRCE_HttpArgs * const args)
+    const NANO_XRCE_ServiceArgs * const args)
 {
     NANO_RetCode rc = NANO_RETCODE_ERROR;
     const NANO_usize buffer_size =
-        NANO_XRCE_HTTPREQUESTPAYLOAD_HEADER_SERIALIZED_SIZE_MAX;
-    NANO_MessageBuffer *hr_mbuf = NULL,
-                       *payload_mbuf = NULL;
+        NANO_XRCE_SERVICEREQUESTPAYLOAD_HEADER_SERIALIZED_SIZE_MAX;
+    NANO_MessageBuffer *svc_mbuf = NULL;
 
-    /* we can set HTTP_REQUEST payload directly from the serialized buffer */
-    NANO_XRCE_HttpRequestPayload *hr_payload = NULL;
+    /* we can set SERVICE_REQUEST payload directly from the serialized buffer */
+    NANO_XRCE_ServiceRequestPayload *svc_payload = NULL;
     NANO_XRCE_ClientRequest *req = NULL;
     NANO_XRCE_Stream *stream = NULL;
     NANO_bool little_endian = NANO_BOOL_FALSE;
     NANO_XRCE_ObjectId obj_id = NANO_XRCE_OBJECTID_INVALID;
+    NANO_usize payload_len = 0;
 
     NANO_LOG_FN_ENTRY
 
     NANO_PCOND(self != NULL)
     NANO_PCOND(args->req.stream_id != NANO_XRCE_STREAMID_NONE)
-    NANO_PCOND(args->payload != NULL)
 
     NANO_XRCE_ObjectId_combine(
-        &args->req.obj_id, NANO_XRCE_OBJK_HTTP, &obj_id);
+        &args->req.obj_id, NANO_XRCE_OBJK_SERVICE_RESOURCE, &obj_id);
 
     stream = NANO_XRCE_Session_lookup_stream(
                 &self->session, args->req.stream_id);
     if (stream == NULL)
     {
-        NANO_LOG_ERROR("unknown stream for HTTP_REQUEST",
+        NANO_LOG_ERROR("unknown stream for SERVICE_REQUEST",
             NANO_LOG_SESSIONID("session",self->session.id)
             NANO_LOG_STREAMID("stream",args->req.stream_id))
         rc = NANO_RETCODE_INVALID_ARGS;
         goto done;
     }
 
-    /* Allocate an mbuf for the HTTP_REQUEST "header" */
-    hr_mbuf = NANO_XRCE_Session_allocate_message(
+    /* Allocate an mbuf for the SERVICE_REQUEST "header" */
+    svc_mbuf = NANO_XRCE_Session_allocate_message(
                 &self->session,
                 stream,
                 NANO_XRCE_MESSAGETYPE_INLINE_PAYLOAD,
                 buffer_size,
                 NULL);
 
-    if (hr_mbuf == NULL)
+    if (svc_mbuf == NULL)
     {
-        NANO_LOG_ERROR("failed to allocate HTTP_REQUEST message",
+        NANO_LOG_ERROR("failed to allocate SERVICE_REQUEST message",
             NANO_LOG_STREAMID("stream", args->req.stream_id))
         rc = NANO_RETCODE_OUT_OF_RESOURCES;
         goto done;
     }
 
-    payload_mbuf = args->payload;
-
-    NANO_PCOND(hr_mbuf != NULL)
-    NANO_PCOND(payload_mbuf != NULL)
-
     NANO_XRCE_Client_new_request(
         self,
         args->req.stream_id,
-        NANO_XRCE_SUBMESSAGEID_HTTP_REQUEST,
+        NANO_XRCE_SUBMESSAGEID_SERVICE_REQUEST,
         &obj_id,
         args->req.flags,
         request_token,
@@ -3262,23 +3489,42 @@ NANO_XRCE_Client_http_request_w_args(
     if (req == NULL)
     {
         NANO_LOG_ERROR(
-            "failed to allocate HTTP_REQUEST request",
+            "failed to allocate SERVICE_REQUEST request",
             NANO_LOG_STREAMID("stream_id", args->req.stream_id));
         rc = NANO_RETCODE_OUT_OF_RESOURCES;
         goto done;
     }
 
+    NANO_LOG_DEBUG("serializing SERVICE_REQUEST:",
+        NANO_LOG_H16("req_id", req->req_id)
+        NANO_LOG_H16("svc_flags", args->flags)
+        NANO_LOG_H16("query_len", args->query_len)
+        NANO_LOG_H32("data_len", args->data_len)
+        NANO_LOG_H32("metadata_len", args->metadata_len)
+        NANO_LOG_MBUF("payload", args->payload))
+
     little_endian = (req->submsg_flags & NANO_XRCE_SUBMESSAGEFLAGS_ENDIANNESS);
 
-    /* Serialize WRITE_DATA message to buffer */
-    hr_payload = (NANO_XRCE_HttpRequestPayload*)
-                        NANO_MessageBuffer_data_ptr(hr_mbuf);
-    NANO_XRCE_RequestId_from_u16(&hr_payload->base.request_id, req->req_id);
-    hr_payload->base.object_id = req->obj_id;
-    NANO_u16_serialize(args->method, &hr_payload->method, NANO_BOOL_FALSE /* le */);
+    /* Serialize SERVICE_REQUEST message to buffer */
+    svc_payload = (NANO_XRCE_ServiceRequestPayload*)
+                        NANO_MessageBuffer_data_ptr(svc_mbuf);
+    NANO_XRCE_RequestId_from_u16(&svc_payload->base.request_id, req->req_id);
+    svc_payload->base.object_id = req->obj_id;
+    NANO_u16_serialize(args->flags, &svc_payload->flags, NANO_CDR_ENDIANNESS_NATIVE);
+    NANO_u16_serialize(args->query_len, &svc_payload->query_len, NANO_CDR_ENDIANNESS_NATIVE);
+    NANO_u32_serialize(args->data_len, &svc_payload->data_len, NANO_CDR_ENDIANNESS_NATIVE);
+    NANO_u32_serialize(args->metadata_len, &svc_payload->metadata_len, NANO_CDR_ENDIANNESS_NATIVE);
 
-    /* Append payload to HTTP_REQUEST header */
-    NANO_MessageBuffer_append(hr_mbuf, payload_mbuf);
+    if (NULL != args->payload)
+    {
+        NANO_MessageBuffer_data_len_msg(args->payload, &payload_len)
+    }
+    svc_payload->has_payload = payload_len > 0;
+    if (svc_payload->has_payload)
+    {
+      /* Append payload to SERVICE_REQUEST header */
+      NANO_MessageBuffer_append(svc_mbuf, args->payload);
+    }
 
     NANO_CHECK_RC(
         NANO_XRCE_Session_send(
@@ -3286,13 +3532,13 @@ NANO_XRCE_Client_http_request_w_args(
             stream,
             req->submsg_id,
             req->submsg_flags,
-            hr_mbuf,
+            svc_mbuf,
             &req->sn),
-        hr_mbuf = NULL;
-        NANO_LOG_ERROR("failed to send HTTP_REQUEST request", NANO_LOG_RC(rc)));
-    hr_mbuf = NULL;
+        svc_mbuf = NULL;
+        NANO_LOG_ERROR("failed to send SERVICE_REQUEST request", NANO_LOG_RC(rc)));
+    svc_mbuf = NULL;
 
-    NANO_LOG_DEBUG("HTTP request sent",
+    NANO_LOG_DEBUG("SERVICE request sent",
         NANO_LOG_STREAMID("stream",NANO_XRCE_Stream_id(stream))
         NANO_LOG_SN("sn",req->sn))
 
@@ -3306,9 +3552,9 @@ NANO_XRCE_Client_http_request_w_args(
     rc = NANO_RETCODE_OK;
 
 done:
-    if (hr_mbuf != NULL)
+    if (svc_mbuf != NULL)
     {
-        NANO_XRCE_Session_release_message(&self->session, stream, hr_mbuf);
+        NANO_XRCE_Session_release_message(&self->session, stream, svc_mbuf);
     }
 
     if (req != NULL)
@@ -3320,6 +3566,6 @@ done:
     NANO_LOG_FN_EXIT_RC(rc)
     return rc;
 }
-#endif /* NANO_FEAT_HTTP_CLIENT */
+#endif /* NANO_FEAT_SERVICE_CLIENT */
 
 #endif /* NANO_FEAT_EXTENDED_API */

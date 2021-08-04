@@ -155,65 +155,6 @@ NANO_XRCE_XmlRepresentationFormat_is_valid(
 
 /*i @} *//* nano_api_xrce_payload_objrepr_common */
 
-/******************************************************************************
- *                              BinData
- ******************************************************************************/
-
-/*i
- * @addtogroup  nano_api_xrce_payload_objrepr_common
- * @{
- */
-
-#if NANO_FEAT_TYPED_SEQUENCE
-#define T           NANO_u8
-#define TSeq        NANO_XRCE_BinData
-#define TSeq_API    NANO_SEQUENCE_API_LEVEL_TYPED
-
-#include "nano/nano_core_osapi_seq_decl.h"
-
-#define NANO_XRCE_BINDATA_INITIALIZER \
-        NANO_TSEQIMPL_INITIALIZER(NANO_u8)
-
-#define NANO_XRCE_BinData_initialize(s_) \
-    NANO_TSeqImpl_initialize(s_)
-
-#define NANO_XRCE_BinData_set_contiguous_buffer(s_,b_,m_,l_) \
-    NANO_TSeqImpl_set_contiguous_buffer_primitive(s_, b_, m_, l_)
-
-#define NANO_XRCE_BinData_finalize(s_) \
-    NANO_TSeqImpl_finalize(s_)
-    
-#define NANO_XRCE_BinData_initialized(s_) \
-    NANO_TSeqImpl_initialized(s_)
-
-#define NANO_XRCE_BinData_as_seq(s_) \
-    NANO_TSeqImpl_as_seq(s_)
-    
-#define NANO_XRCE_BinData_as_seq_mut(s_) \
-    NANO_TSeqImpl_as_seq_mut(s_)
-    
-#define NANO_XRCE_BinData_reference(s_,i_) \
-    NANO_TSeqImpl_reference(s_,i_, NANO_u8)
-    
-#define NANO_XRCE_BinData_reference_mut(s_,i_) \
-    NANO_TSeqImpl_reference_mut(s_,i_, NANO_u8)
-
-#define NANO_XRCE_BinData_contiguous_buffer(s_) \
-    NANO_TSeqImpl_contiguous_buffer(s_, NANO_u8)
-    
-#define NANO_XRCE_BinData_contiguous_buffer_mut(s_) \
-    NANO_TSeqImpl_contiguous_buffer_mut(s_, NANO_u8)
-    
-#define NANO_XRCE_BinData_maximum(s_) \
-    NANO_TSeqImpl_maximum(s_)
-    
-#define NANO_XRCE_BinData_length(s_) \
-    NANO_TSeqImpl_length(s_)
-    
-#define NANO_XRCE_BinData_set_length(s_, l_) \
-    NANO_TSeqImpl_set_length(s_,l_)
-
-#endif /* NANO_FEAT_TYPED_SEQUENCE */
 
 /******************************************************************************
  *                          BinRepresentationFormat
@@ -710,6 +651,37 @@ typedef struct NANODllExport NANO_XRCE_ApplicationRepresentationI
 /*i @} *//* nano_api_xrce_payload_objrepr_app */
 
 #endif /* NANO_FEAT_OBJECT_KIND_APPLICATION */
+
+#if NANO_FEAT_SERVICE_CLIENT
+/******************************************************************************
+ *                            SERVICE_Representation
+ ******************************************************************************/
+/*i
+ * @addtogroup nano_api_xrce_payload_objrepr_service
+ * @{
+ */
+
+/*i
+ * @brief TODO
+ */
+typedef struct NANODllExport NANO_XRCE_ServiceRepresentationI
+{
+    /*i
+     * @brief TODO
+     * 
+     */
+    NANO_XRCE_RepresentationRefAndXml base;
+} NANO_XRCE_ServiceRepresentation;
+
+#define NANO_XRCE_SERVICEREPRESENTATION_INITIALIZER \
+{\
+    NANO_XRCE_REPRESENTATIONREFANDXML_INITIALIZER /* base */\
+}
+
+
+/*i @} *//* nano_api_xrce_payload_objrepr_service */
+
+#endif /* NANO_FEAT_SERVICE_CLIENT */
 
 #if NANO_FEAT_OBJECT_KIND_PUBLISHER || \
     NANO_FEAT_OBJECT_KIND_SUBSCRIBER || \
@@ -2557,6 +2529,13 @@ typedef union NANODllExport NANO_XRCE_ObjectVariantValueI
      */
     NANO_XRCE_ApplicationRepresentation application;
 #endif /* NANO_FEAT_OBJECT_KIND_APPLICATION */
+#if NANO_FEAT_SERVICE_CLIENT
+    /*i
+     * @brief TODO
+     * 
+     */
+    NANO_XRCE_ServiceRepresentation service;
+#endif /* NANO_FEAT_SERVICE_CLIENT */
     /*i
      * @brief TODO
      * 
@@ -2599,6 +2578,9 @@ typedef union NANODllExport NANO_XRCE_ObjectVariantValueI
 #elif NANO_FEAT_OBJECT_KIND_APPLICATION
 #define NANO_XRCE_OBJECTVARIANTVALUE_ELEMENT_INITIALIZER \
     NANO_XRCE_APPLICATIONREPRESENTATION_INITIALIZER
+#elif NANO_FEAT_SERVICE_CLIENT
+#define NANO_XRCE_OBJECTVARIANTVALUE_ELEMENT_INITIALIZER \
+    NANO_XRCE_SERVICEREPRESENTATION_INITIALIZER
 #else
 #define NANO_XRCE_OBJECTVARIANTVALUE_ELEMENT_INITIALIZER \
     NANO_XRCE_CLIENTREPRESENTATION_INITIALIZER

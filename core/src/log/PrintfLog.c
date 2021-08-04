@@ -506,55 +506,13 @@ NANO_LOG_PrintfWriter_write_msghdr(
     NANO_OSAPI_Debug_printf(" ]");
 }
 
-const char *
-NANO_LOG_PrintfWriter_submsgid_to_str(const NANO_XRCE_SubmessageId self)
-{
-    switch (self)
-    {
-    case NANO_XRCE_SUBMESSAGEID_CREATE_CLIENT:
-        return "CREATE_CLIENT";
-    case NANO_XRCE_SUBMESSAGEID_CREATE:
-        return "CREATE";
-    case NANO_XRCE_SUBMESSAGEID_DELETE:
-        return "DELETE";
-    case NANO_XRCE_SUBMESSAGEID_STATUS:
-        return "STATUS";
-    case NANO_XRCE_SUBMESSAGEID_STATUS_AGENT:
-        return "STATUS_AGENT";
-    case NANO_XRCE_SUBMESSAGEID_READ_DATA:
-        return "READ_DATA";
-    case NANO_XRCE_SUBMESSAGEID_WRITE_DATA:
-        return "WRITE_DATA";
-    case NANO_XRCE_SUBMESSAGEID_DATA:
-        return "DATA";
-    case NANO_XRCE_SUBMESSAGEID_ACKNACK:
-        return "ACKNACK";
-    case NANO_XRCE_SUBMESSAGEID_HEARTBEAT:
-        return "HEARTBEAT";
-    case NANO_XRCE_SUBMESSAGEID_TIMESTAMP:
-        return "TIMESTAMP";
-    case NANO_XRCE_SUBMESSAGEID_TIMESTAMP_REPLY:
-        return "TIMESTAMP_REPLY";
-    case NANO_XRCE_SUBMESSAGEID_INFO:
-        return "INFO";
-    case NANO_XRCE_SUBMESSAGEID_GET_INFO:
-        return "GET_INFO";
-    case NANO_XRCE_SUBMESSAGEID_FRAGMENT:
-        return "FRAGMENT";
-    case NANO_XRCE_SUBMESSAGEID_RESET:
-        return "RESET";
-    default:
-        return "UNKNOWN";
-    }
-}
-
 void
 NANO_LOG_PrintfWriter_write_submsghdr(
     NANO_LOG_Writer *const self,
     const char *const key,
     const NANO_XRCE_SubmessageHeader val)
 {
-    const char *id = NANO_LOG_PrintfWriter_submsgid_to_str(val.id);
+    const char *id = NANO_XRCE_SubmessageId_as_str(val.id);
 
     NANO_LOG_PrintfWriter_write_key(self,key);
     NANO_OSAPI_Debug_printf("[");

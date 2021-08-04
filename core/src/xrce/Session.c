@@ -1092,6 +1092,8 @@ NANO_XRCE_Session_dismiss_send_queue(
 {
     NANO_usize i = 0;
 
+    NANO_LOG_FN_ENTRY
+
     for (i = 0; i < msg_count; i++)
     {
         NANO_MessageBuffer *mbuf = NULL;
@@ -1115,7 +1117,7 @@ NANO_XRCE_Session_dismiss_send_queue(
         NANO_XRCE_Session_release_message(self, &stream->base, mbuf);
     }
 done:
-
+    NANO_LOG_FN_EXIT
     return i;
 }
 
@@ -1123,7 +1125,8 @@ NANO_usize
 NANO_XRCE_Session_dismiss_send_queue_up_to(
     NANO_XRCE_Session *const self,
     NANO_XRCE_ReliableStream *const stream_recv,
-    const NANO_XRCE_SeqNum *const msg_sn)
+    const NANO_XRCE_SeqNum *const msg_sn,
+    const NANO_bool confirmed)
 {
     NANO_XRCE_InlineHeaderBuffer *hdr_mbuf = NULL;
     NANO_MessageBuffer *mbuf = NULL;
@@ -1131,6 +1134,8 @@ NANO_XRCE_Session_dismiss_send_queue_up_to(
     NANO_XRCE_SeqNum *mbuf_sn = NULL;
     NANO_usize dismiss_len = 0,
                res = 0;
+
+    NANO_LOG_FN_ENTRY
 
     mbuf = NANO_MessageBufferQueue_head(&stream_recv->send_queue);
     while (mbuf != NULL)
@@ -1150,10 +1155,7 @@ NANO_XRCE_Session_dismiss_send_queue_up_to(
     if (dismiss_len > 0)
     {
         res = NANO_XRCE_Session_dismiss_send_queue(
-            self,
-            stream_recv,
-            dismiss_len,
-            NANO_BOOL_FALSE /* confirmed */);
+            self, stream_recv, dismiss_len, confirmed);
 
         if (dismiss_len != res)
         {
@@ -1165,6 +1167,7 @@ NANO_XRCE_Session_dismiss_send_queue_up_to(
         }
     }
 
+    NANO_LOG_FN_EXIT
     return res;
 }
 
@@ -1336,7 +1339,7 @@ NANO_XRCE_Session_on_acknack(
             {
                 dismiss_len =
                     NANO_XRCE_Session_dismiss_send_queue(
-                        self, stream, 1, NANO_BOOL_TRUE);
+                        self, stream, 1, NANO_BOOL_TRUE /* confirmed */);
                 
                 /* this should never happen */
                 if (1 != dismiss_len)
@@ -1426,7 +1429,7 @@ NANO_XRCE_Session_on_acknack(
             
             if (send_queue_len !=
                     NANO_XRCE_Session_dismiss_send_queue(
-                        self, stream, send_queue_len, NANO_BOOL_TRUE))
+                        self, stream, send_queue_len, NANO_BOOL_TRUE /* confirmed */))
             {
                 NANO_LOG_ERROR_MSG("FAILED to dismiss send queue")
                 goto done;
@@ -2202,6 +2205,7 @@ NANO_XRCE_Session_deliver_payload(
             NANO_PCOND(stream != NULL)
             NANO_XRCE_Session_on_acknack(
                 self, stream, msg_hdr, &submsg_hdr, dptr);
+            *listener_rc_out = NANO_RETCODE_OK;
             break;
         }
         case NANO_XRCE_SUBMESSAGEID_HEARTBEAT:
@@ -2209,6 +2213,7 @@ NANO_XRCE_Session_deliver_payload(
             NANO_PCOND(stream != NULL)
             NANO_XRCE_Session_on_heartbeat(
                 self, stream, msg_hdr, &submsg_hdr, dptr);
+            *listener_rc_out = NANO_RETCODE_OK;
             break;
         }
 #endif /* NANO_FEAT_RELIABILITY */
@@ -3561,7 +3566,7 @@ done:
         {
             dismissed +=
                 NANO_XRCE_Session_dismiss_send_queue_up_to(
-                    self, stream, &last_sent_sn);
+                    self, stream, &last_sent_sn, NANO_BOOL_TRUE /* confirmed */);
             if (NANO_RETCODE_OK !=
                     NANO_XRCE_Session_send_heartbeat(self, stream, NANO_BOOL_TRUE))
             {
@@ -4764,7 +4769,7 @@ NANO_XRCE_Session_send_heartbeat(
             rc = NANO_RETCODE_OK;
             goto done;
         }
-        NANO_LOG_WARNING("sending HEARTBEAT on empty send queue",
+        NANO_LOG_DEBUG("sending HEARTBEAT on empty send queue",
             NANO_LOG_KEY("key", self->key)
             NANO_LOG_SESSIONID("session", self->id)
             NANO_LOG_STREAMID("stream", hb->stream_id)
