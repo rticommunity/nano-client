@@ -20,7 +20,7 @@
  Start nanoagentd with the following command (change paths and other arguments
  according to your environment):
  
-   nanoagentd -U -a -c resource/xml/examples/sensor_agent.xml
+   nanoagentd -http -U -a -c resource/xml/examples/http_agent.xml
  
  ******************************************************************************/
 
