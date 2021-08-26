@@ -228,7 +228,6 @@ endif()
 nano_project_install()
 
 # Install cmake build system so it may be used by other projects.
-message("PROJECT_NAME_INSTALL_PREFIX: '${${PROJECT_NAME}_INSTALL_PREFIX}'")
 install(
     FILES resource/cmake/nano-build.cmake
     DESTINATION ${${PROJECT_NAME}_INSTALL_PREFIX}cmake
