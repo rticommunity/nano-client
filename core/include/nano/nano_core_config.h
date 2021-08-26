@@ -566,6 +566,7 @@
 #define NANO_FEAT_LOG_IMPL_PRINTF                           1
 #endif /* NANO_FEAT_LOG_IMPL_PRINTF */
 
+
 #ifndef NANO_FEAT_LOG_COLOR
 /*e
  * @brief Enable colored logging output. Requires termcolor.h.

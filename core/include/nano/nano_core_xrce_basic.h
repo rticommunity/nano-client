@@ -515,7 +515,7 @@ NANO_XRCE_ObjectKind_is_valid(const NANO_XRCE_ObjectKind self);
     (k_) == NANO_XRCE_OBJK_SERVICE_RESOURCE)
 
 NANO_bool
-NANO_XRCE_ObjectKinid_is_extended(const NANO_XRCE_ObjectKind self);
+NANO_XRCE_ObjectKind_is_extended(const NANO_XRCE_ObjectKind self);
 
 #define NANO_XRCE_ObjectKind_is_extended(k_) \
     ((NANO_bool)\

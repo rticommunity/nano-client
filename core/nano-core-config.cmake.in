@@ -30,5 +30,5 @@ endforeach()
 
 check_required_components(nano-core)
 
-
-
+# Load nano's build system
+include(${nano-core_DIR}/nano-build.cmake)

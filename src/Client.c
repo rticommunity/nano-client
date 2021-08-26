@@ -1714,6 +1714,8 @@ NANO_XRCE_Client_return_or_wait_for_request(
 
     if (sync)
     {
+        NANO_XRCE_ClientListener_on_request_sent(&self->listener, self, req);
+
         if (confirmed)
         {
             rc = NANO_XRCE_Client_wait_for_request(

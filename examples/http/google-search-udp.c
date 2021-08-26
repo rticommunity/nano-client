@@ -163,7 +163,7 @@ int main(int argc, char const *argv[])
     if (NANO_RETCODE_OK !=
         NANO_XRCE_Client_service_request(
             &udp_client.client,
-            &http_req,
+            NULL,
             NANO_XRCE_STREAMID_BUILTIN_RELIABLE,
             NANO_XRCE_REQUESTFLAGS_SYNC,
             REQUEST_TIMEOUT,

@@ -80,6 +80,11 @@ typedef struct NANODllExport NANO_XRCE_ClientRequestI NANO_XRCE_ClientRequest;
  */
 typedef struct NANODllExport NANO_XRCE_ClientListenerI NANO_XRCE_ClientListener;
 
+typedef void (*NANO_XRCE_ClientListener_OnRequestSentFn)(
+    NANO_XRCE_ClientListener *const self,
+    NANO_XRCE_Client *const client,
+    const NANO_XRCE_ClientRequest *const request);
+
 #if NANO_FEAT_SUBSCRIBE
 /*e
  * @brief TODO
@@ -205,6 +210,7 @@ typedef void
  */
 struct NANO_XRCE_ClientListenerI
 {
+    NANO_XRCE_ClientListener_OnRequestSentFn on_request_sent;
 #if NANO_FEAT_SUBSCRIBE
     /*e
      * @brief TODO
@@ -257,6 +263,7 @@ struct NANO_XRCE_ClientListenerI
 
     NANO_XRCE_ClientListenerI()
     : 
+        on_request_sent(NULL),
 #if NANO_FEAT_SUBSCRIBE
         on_data(NULL),
 #endif /* NANO_FEAT_SUBSCRIBE */
@@ -325,12 +332,27 @@ struct NANO_XRCE_ClientListenerI
  */
 #define NANO_XRCE_CLIENTLISTENER_INITIALIZER \
 {\
+    NULL, /* on_request_sent */\
     NANO_XRCE_CLIENTLISTENER_SUBSCRIBE_INITIALIZER /* subscribe */\
     NANO_XRCE_CLIENTLISTENER_RELIABILITY_INITIALIZER /* reliability */\
     NANO_XRCE_CLIENTLISTENER_INFO_INITIALIZER /* info */\
     NANO_XRCE_CLIENTLISTENER_DISCOVERY_INITIALIZER /* discovery */\
     NANO_XRCE_CLIENTLISTENER_SERVICE_INITIALIZER /* service */\
     NULL /* user_data */\
+}
+
+void
+NANO_XRCE_ClientListener_on_request_sent(
+    NANO_XRCE_ClientListener *const self,
+    NANO_XRCE_Client *const client,
+    const NANO_XRCE_ClientRequest *const request);
+
+#define NANO_XRCE_ClientListener_on_request_sent(s_, c_, r_) \
+{\
+    if ((s_)->on_request_sent != NULL)\
+    {\
+        (s_)->on_request_sent((s_),(c_),(r_));\
+    }\
 }
 
 #if NANO_FEAT_SUBSCRIBE
