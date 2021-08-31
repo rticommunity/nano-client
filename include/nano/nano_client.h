@@ -546,6 +546,11 @@ typedef NANO_u16 NANO_XRCE_RequestFlags;
  * @brief TODO
  * 
  */
+#define NANO_XRCE_REQUESTFLAGS_WAITED               (0x01 << 12)
+/*e
+ * @brief TODO
+ * 
+ */
 #define NANO_XRCE_REQUESTFLAGS_DEFAULT              0
 
 
@@ -693,6 +698,40 @@ typedef struct NANO_XRCE_ClientRequestTokenI
     NANO_XRCE_SEQNUM_INITIALIZER, /* sn */ \
     NANO_XRCE_STREAMID_NONE /* stream_id */ \
 }
+
+NANO_bool
+NANO_XRCE_ClientRequestToken_match_reply(
+    const NANO_XRCE_ClientRequestToken *const self,
+    const NANO_XRCE_RequestId *const request_id,
+    const NANO_XRCE_ObjectId *const object_id);
+
+#define NANO_XRCE_ClientRequestToken_match_reply(s_, r_, o_)\
+(\
+    memcmp(\
+      (s_)->request_id.value, \
+      (r_)->value, \
+      sizeof((s_)->request_id.value)) == 0 && \
+    memcmp(\
+      (s_)->object_id.value, \
+      (o_)->value, \
+      sizeof((s_)->object_id.value)) == 0 \
+)
+
+NANO_bool
+NANO_XRCE_ClientRequestToken_equals(
+    const NANO_XRCE_ClientRequestToken *const self,
+    const NANO_XRCE_ClientRequestToken *const other);
+
+#define NANO_XRCE_ClientRequestToken_equals(s_, o_)\
+(\
+    NANO_XRCE_ClientRequestToken_match_reply(\
+      (s_), &(o_)->request_id, &(o_)->object_id) && \
+    memcmp(\
+      (s_)->sn.value, \
+      (o_)->sn.value, \
+      sizeof((s_)->sn.value)) == 0 && \
+    (s_)->stream_id == (o_)->stream_id \
+)
 
 /** @} *//* nano_api_clientrequests */
 
@@ -1434,6 +1473,23 @@ NANODllExport
 void
 NANO_XRCE_Client_drop_requests(NANO_XRCE_Client *const self);
 
+/*e
+ * @brief TODO
+ * 
+ * @param self 
+ */
+NANODllExport
+void
+NANO_XRCE_Client_set_listener(
+    NANO_XRCE_Client *const self,
+    const NANO_XRCE_ClientListener listener);
+
+#define NANO_XRCE_Client_set_listener(s_, l_) \
+{\
+    (s_)->listener = (l_);\
+}
+
+
 /** @} *//* nano_api_client */
 
 /**
@@ -1804,6 +1860,21 @@ NANO_XRCE_Client_wait_for_request_complete(
     const NANO_Timeout wait_timeout_ms,
     NANO_XRCE_ResultStatus *const request_result_out);
 
+/*e
+ * @brief TODO
+ * 
+ * @param self 
+ * @param wait_timeout_ms 
+ * @return NANO_RetCode
+ */
+NANODllExport
+NANO_RetCode
+NANO_XRCE_Client_wait_for_next_request_complete(
+    NANO_XRCE_Client *const self,
+    const NANO_Timeout wait_timeout_ms,
+    NANO_XRCE_ClientRequestToken *const request_token_out,
+    NANO_XRCE_ResultStatus *const request_result_out);
+
 #if NANO_FEAT_RELIABILITY
 /*e
  * @brief TODO
@@ -1901,6 +1972,15 @@ NANO_XRCE_Client_write_w_args(
     const NANO_XRCE_WriteArgs *const args);
 
 #endif /* NANO_FEAT_PUBLISH */
+
+#if NANO_FEAT_SYSTIME
+void
+NANO_XRCE_Client_now(NANO_XRCE_Client *const self, NANO_u64 *const ms_out);
+
+#define NANO_XRCE_Client_now(s_, ms_) \
+    NANO_OSAPI_Clock_millis(&(s_)->session.clock, (ms_))
+
+#endif /* NANO_FEAT_SYSTIME */
 
 #if NANO_FEAT_SUBSCRIBE
 

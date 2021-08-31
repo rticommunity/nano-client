@@ -30,10 +30,10 @@
  
  ******************************************************************************/
 
-
+#include <stdio.h>
+#include <stdlib.h>
 #include "nano/nano_client_udpv4.h"
 #include "nano/nano_core_http.h"
-#include <stdlib.h>
 
 #define AGENT_ADDRESS           { 127, 0, 0, 1 }
 

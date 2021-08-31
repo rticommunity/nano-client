@@ -33,7 +33,13 @@
     NANO_MESSAGEBUFFER_INLINE_SIZE(\
         NANO_XRCE_WRITEDATAPAYLOAD_HEADER_SERIALIZED_SIZE_MAX)
 
-    
+#define NANO_XRCE_ClientRequestToken_from_request(s_, req_) \
+{\
+    NANO_XRCE_RequestId_from_u16(&(s_)->request_id, (req_)->req_id);\
+    (s_)->object_id = (req_)->obj_id;\
+    (s_)->sn = (req_)->sn;\
+    (s_)->stream_id = (req_)->stream_id;\
+}
 
 NANO_PRIVATE
 void
@@ -719,7 +725,7 @@ release_info_req:
         {
             NANO_LOG_WARNING("SERVICE_REPLY too short",
                 NANO_LOG_U16("length", submsg_hdr->length))
-            goto release_svc_req;
+            goto done;
         }
 
         req_id = NANO_XRCE_RequestId_to_u16(&reply->related_request.request_id);
@@ -739,10 +745,10 @@ release_info_req:
                 NANO_LOG_SESSIONID("session",msg_hdr->session_id)
                 NANO_LOG_STREAMID("stream",msg_hdr->stream_id)
                 NANO_LOG_U16("req_id", req_id))
-            goto release_svc_req;
+            goto done;
         }
 
-        if (NANO_XRCE_SubmessageFlags_SERVICEREQUEST_oneway(submsg_hdr->flags))
+        if (NANO_XRCE_SubmessageFlags_SERVICEREQUEST_oneway(req->submsg_flags))
         {
             NANO_LOG_WARNING("unexpected SERVICE_REPLY",
                 NANO_LOG_U16("req", req->req_id))
@@ -1325,10 +1331,7 @@ NANO_XRCE_Client_new_request(
 
     if (request_token != NULL)
     {
-        NANO_XRCE_RequestId_from_u16(&request_token->request_id, req->req_id);
-        request_token->object_id = req->obj_id;
-        request_token->sn = req->sn;
-        request_token->stream_id = req->stream_id;
+        NANO_XRCE_ClientRequestToken_from_request(request_token, req);
     }
 
     *request_out = req;
@@ -1458,10 +1461,13 @@ NANO_XRCE_Client_wait_for_request(
     const NANO_Timeout wait_timeout_ms,
     const NANO_XRCE_RequestFlags complete_flags,
     const NANO_bool dismiss_request,
-    NANO_XRCE_ResultStatus *const request_result_out)
+    NANO_XRCE_ResultStatus *const request_result_out,
+    NANO_XRCE_ClientRequest **const completed_req_out)
 {
     NANO_RetCode rc = NANO_RETCODE_ERROR;
     const NANO_XRCE_ResultStatus def_result = NANO_XRCE_RESULTSTATUS_INITIALIZER;
+    NANO_bool complete = NANO_BOOL_FALSE;
+    NANO_XRCE_ClientRequest *completed_req = NULL;
 #if NANO_FEAT_SYSTIME
     NANO_u64 ms_start = 0,
              ms_now = 0,
@@ -1471,10 +1477,21 @@ NANO_XRCE_Client_wait_for_request(
     NANO_LOG_FN_ENTRY
 
     NANO_PCOND(self != NULL)
-    NANO_PCOND(req != NULL)
+    // NANO_PCOND(req != NULL)
     NANO_PCOND(self->session.transport != NULL)
 
-    if (request_result_out != NULL)
+    if (NULL == req && NULL == self->pending_requests)
+    {
+        NANO_LOG_ERROR_MSG("no pending requests")
+        goto done;
+    }
+    if (NULL == req && dismiss_request)
+    {
+        NANO_LOG_ERROR_MSG("no request to dismiss")
+        goto done;
+    }
+
+    if (NULL != request_result_out)
     {
         *request_result_out = def_result;
     }
@@ -1488,13 +1505,22 @@ NANO_XRCE_Client_wait_for_request(
 #endif /* NANO_FEAT_SYSTIME */
 
     do {
-        NANO_LOG_DEBUG("WAITING for request",
-            NANO_LOG_KEY("key", *NANO_XRCE_Session_key(&self->session))
-            NANO_LOG_SESSIONID("id", *NANO_XRCE_Session_id(&self->session))
-            NANO_LOG_STREAMID("stream", req->stream_id)
-            NANO_LOG_H16("req_id", req->req_id)
-            NANO_LOG_SN("req_sn", req->sn)
-            NANO_LOG_PTR("req", req))
+        if (NULL != req)
+        {
+            NANO_LOG_DEBUG("WAITING for request",
+                NANO_LOG_KEY("key", *NANO_XRCE_Session_key(&self->session))
+                NANO_LOG_SESSIONID("id", *NANO_XRCE_Session_id(&self->session))
+                NANO_LOG_STREAMID("stream", req->stream_id)
+                NANO_LOG_H16("req_id", req->req_id)
+                NANO_LOG_SN("req_sn", req->sn)
+                NANO_LOG_PTR("req", req))
+        }
+        else
+        {
+            NANO_LOG_DEBUG("WAITING for any request",
+                NANO_LOG_KEY("key", *NANO_XRCE_Session_key(&self->session))
+                NANO_LOG_SESSIONID("id", *NANO_XRCE_Session_id(&self->session)))
+        }
 
         NANO_CHECK_RC(
             NANO_XRCE_Session_run(&self->session, 1, timeout_remaining),
@@ -1507,6 +1533,31 @@ NANO_XRCE_Client_wait_for_request(
                 NANO_LOG_ERROR("session::run failed", NANO_LOG_RC(rc))
             });
 
+        if (NULL != req)
+        {
+            if (req->flags & complete_flags)
+            {
+                completed_req = req;
+            }
+        }
+        else
+        {
+            /* if we're not waiting on any specific request (i.e. we are waiting
+               for the next request), we check flag NANO_XRCE_REQUESTFLAGS_WAITED
+               in addition to the "complete_flags". This is to avoid returning
+               the same request twice via this method. */
+            completed_req = self->pending_requests;
+            while (NULL != completed_req)
+            {
+                if (completed_req->flags & complete_flags &&
+                    !(completed_req->flags & NANO_XRCE_REQUESTFLAGS_WAITED))
+                {
+                    break;
+                }
+                completed_req = completed_req->next;
+            }
+        }
+
 #if NANO_FEAT_SYSTIME
         if (wait_timeout_ms > 0)
         {
@@ -1517,9 +1568,9 @@ NANO_XRCE_Client_wait_for_request(
                     0 : (wait_timeout_ms - ((NANO_u32)ms_diff));
         }
 #endif /* NANO_FEAT_SYSTIME */
-    } while (!(req->flags & complete_flags) && timeout_remaining != 0);
+    } while (NULL == completed_req && timeout_remaining != 0);
     
-    if (!(req->flags & complete_flags))
+    if (NULL == completed_req)
     {
         NANO_LOG_ERROR("TIMEOUT exceeded without a reply",
             NANO_LOG_I32("timeout",wait_timeout_ms)
@@ -1529,16 +1580,22 @@ NANO_XRCE_Client_wait_for_request(
         goto done;
     }
 
-    REQ_COMPLETE_LOG("request RESULT",
-        NANO_LOG_STREAMID("stream",req->stream_id)
-        NANO_LOG_H16("req.id",req->req_id)
-        NANO_LOG_BOOL("req.success",NANO_XRCE_ResultStatus_success(&req->result))
-        NANO_LOG_H8("result.status",req->result.status)
-        NANO_LOG_H8("result.impl_status",req->result.implementation_status))
+    completed_req->flags |= NANO_XRCE_REQUESTFLAGS_WAITED;
 
-    if (request_result_out != NULL)
+    REQ_COMPLETE_LOG("request RESULT",
+        NANO_LOG_STREAMID("stream",completed_req->stream_id)
+        NANO_LOG_H16("req.id",completed_req->req_id)
+        NANO_LOG_BOOL("req.success",NANO_XRCE_ResultStatus_success(&completed_req->result))
+        NANO_LOG_H8("result.status",completed_req->result.status)
+        NANO_LOG_H8("result.impl_status",completed_req->result.implementation_status))
+
+    if (NULL != request_result_out)
     {
-        *request_result_out = req->result;
+        *request_result_out = completed_req->result;
+    }
+    if (NULL != completed_req_out)
+    {
+        *completed_req_out = completed_req;
     }
 
     rc = NANO_RETCODE_OK;
@@ -1580,6 +1637,7 @@ NANO_XRCE_Client_wait_for_data_received(
             wait_timeout_ms,
             NANO_XRCE_REQUESTFLAGS_DATA,
             NANO_BOOL_FALSE,
+            NULL,
             NULL),
         if (rc == NANO_RETCODE_TIMEOUT)
         {
@@ -1628,13 +1686,52 @@ NANO_XRCE_Client_wait_for_request_complete(
             wait_timeout_ms,
             NANO_XRCE_REQUESTFLAGS_COMPLETE,
             NANO_BOOL_FALSE,
-            request_result_out),
+            request_result_out,
+            NULL),
         NANO_LOG_ERROR_MSG("FAILED to wait for request"));
     
     rc = NANO_RETCODE_OK;
     
 done:
     
+    NANO_LOG_FN_EXIT_RC(rc)
+    return rc;
+}
+
+NANO_RetCode
+NANO_XRCE_Client_wait_for_next_request_complete(
+    NANO_XRCE_Client *const self,
+    const NANO_Timeout wait_timeout_ms,
+    NANO_XRCE_ClientRequestToken *const request_token_out,
+    NANO_XRCE_ResultStatus *const request_result_out)
+{
+    NANO_RetCode rc = NANO_RETCODE_ERROR;
+    NANO_XRCE_ClientRequest *completed_req = NULL;
+    
+    NANO_LOG_FN_ENTRY
+    
+    NANO_PCOND(self != NULL)
+    
+    NANO_CHECK_RC(
+        NANO_XRCE_Client_wait_for_request(
+            self,
+            NULL,
+            wait_timeout_ms,
+            NANO_XRCE_REQUESTFLAGS_COMPLETE,
+            NANO_BOOL_FALSE,
+            request_result_out,
+            &completed_req),
+        NANO_LOG_ERROR_MSG("FAILED to wait for request"));
+
+    if (request_token_out != NULL)
+    {
+        NANO_XRCE_ClientRequestToken_from_request(
+            request_token_out, completed_req);
+    }
+    
+    rc = NANO_RETCODE_OK;
+    
+done:
     NANO_LOG_FN_EXIT_RC(rc)
     return rc;
 }
@@ -1724,7 +1821,8 @@ NANO_XRCE_Client_return_or_wait_for_request(
                     wait_timeout_ms,
                     NANO_XRCE_REQUESTFLAGS_COMPLETE,
                     NANO_BOOL_FALSE /* dismiss */,
-                    &request_result);
+                    &request_result,
+                    NULL);
             if (NANO_RETCODE_OK == rc &&
                 !NANO_XRCE_ResultStatus_success(&request_result))
             {

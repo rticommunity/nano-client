@@ -24,7 +24,7 @@
  
  ******************************************************************************/
 
-
+#include <stdio.h>
 #include "nano/nano_client_udpv4.h"
 #include "nano/nano_core_http.h"
 
