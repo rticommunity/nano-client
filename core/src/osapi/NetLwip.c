@@ -219,7 +219,7 @@ NANO_OSAPI_LwipUdpSocket_pbuf_to_mbuf(
 {
     NANO_RetCode rc = NANO_RETCODE_ERROR;
     struct pbuf *nxt = p;
-    NANO_usize nxt_len = 0,
+    NANO_usize pbuf_len = 0,
                remaining = 0,
                copied_len = 0;
     NANO_u8 *ptr = NULL;
