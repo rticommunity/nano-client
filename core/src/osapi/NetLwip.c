@@ -219,9 +219,9 @@ NANO_OSAPI_LwipUdpSocket_pbuf_to_mbuf(
 {
     NANO_RetCode rc = NANO_RETCODE_ERROR;
     struct pbuf *nxt = p;
-    NANO_usize copy_len = 0,
-                remaining = 0,
-                cur_len = 0;
+    NANO_usize nxt_len = 0,
+               remaining = 0,
+               copied_len = 0;
     NANO_u8 *ptr = NULL;
     
     NANO_LOG_FN_ENTRY
@@ -239,19 +239,43 @@ NANO_OSAPI_LwipUdpSocket_pbuf_to_mbuf(
 
     ptr = NANO_MessageBuffer_data_ptr(mbuf);
 
+    /* TODO(asorbini) Adjust the end condition of this loop to conform with
+       lwIP's documentation:
+       "The last pbuf of a packet has a ->tot_len field that equals the ->len
+        field. It can be found by traversing the list. If the last pbuf of a
+        packet has a ->next field other than NULL, more packets are on the
+        queue.
+
+        Therefore, looping through a pbuf of a single packet, has an loop end
+        condition (tot_len == p->len), NOT (next == NULL)."
+
+        The condition is fine for now, because, also according to the docs:
+        "CURRENTLY, PACKET QUEUES ARE NOT SUPPORTED!!!". */
     while (nxt != NULL && remaining > 0)
     {
-        if (nxt->len > remaining)
+        if (nxt->len == nxt->tot_len)
+        {
+            /* The last pbuf's len is equal to the total length of the message,
+               so we must compute the length of the buffer to copy as the
+               difference with what we've copied so far. */
+            pbuf_len = nxt->len - (mbuf_size - remaining);
+        }
+        else
+        {
+            pbuf_len = nxt->len;
+        }
+
+        if (pbuf_len > remaining)
         {
             NANO_LOG_ERROR("out of socket resources",
-                NANO_LOG_USIZE("needed", nxt->len)
+                NANO_LOG_USIZE("needed", pbuf_len)
                 NANO_LOG_USIZE("remaining", remaining)
                 NANO_LOG_USIZE("max", mbuf_size))
             goto done;
         }
-        NANO_OSAPI_Memory_copy(ptr, nxt->payload, nxt->len);
-        ptr += nxt->len;
-        remaining -= nxt->len;
+        NANO_OSAPI_Memory_copy(ptr, nxt->payload, pbuf_len);
+        ptr += pbuf_len;
+        remaining -= pbuf_len;
         nxt = nxt->next;
     }
 
@@ -369,49 +393,18 @@ NANO_OSAPI_LwipUdpSocket_on_recv(
     src_addr = ip4_addr_get_u32(addr);
     if (src_addr == 0)
     {
-        NANO_LOG_WARNING_MSG("INVALID src address")
         goto done;
     }
     src_port = port;
 
-#if 1
     if (self->pbuf_in != NULL)
     {
-        NANO_LOG_DEBUG("LOST lwip message",
-            NANO_LOG_H32("src_addr", self->read_addr)
-            NANO_LOG_U16("src_port", self->read_port))
         pbuf_free(self->pbuf_in);
     }
-    NANO_LOG_TRACE("RECEIVED lwip message",
-        NANO_LOG_H32("src_addr", src_addr)
-        NANO_LOG_U16("src_port", src_port))
     self->read_addr = src_addr;
     self->read_port = src_port;
     self->pbuf_in = p;
-#else
-    if (self->pbuf_in == NULL)
-    {
 
-        NANO_LOG_TRACE("RECEIVED lwip message",
-            NANO_LOG_H32("src_addr", src_addr)
-            NANO_LOG_U16("src_port", src_port))
-        self->read_addr = src_addr;
-        self->read_port = src_port;
-        self->pbuf_in = p;
-    }
-    else
-    {
-        NANO_LOG_WARNING("LOST lwip message",
-            NANO_LOG_H32("src_addr", self->read_addr)
-            NANO_LOG_U16("src_port", self->read_port))
-        pbuf_free(p);
-    }
-#endif
-
-#ifdef NANO_HAVE_YIELD
-    NANO_OSAPI_Scheduler_yield();
-#endif /* NANO_HAVE_YIELD */
-    
     rc = NANO_RETCODE_OK;
 done:
     if (NANO_RETCODE_OK != rc)
