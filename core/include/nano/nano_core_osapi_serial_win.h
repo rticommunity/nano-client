@@ -30,7 +30,7 @@ typedef struct NANODllExport NANO_OSAPI_WinSerialConnectionI
 
 #if NANO_CPP
     NANO_OSAPI_WinSerialConnectionI()
-    : HANDLE(INVALID_HANDLE_VALUE)
+    : port(EINVALID_HANDLE_VALUE)
     {
         
     }
@@ -119,3 +119,4 @@ NANO_OSAPI_WinSerialConnection_close(
             NANO_FEAT_TRANSPORT_PLUGIN_SERIAL */
 
 #endif /* nano_core_osapi_serial_win_h */
+
