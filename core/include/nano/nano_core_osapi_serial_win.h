@@ -30,7 +30,7 @@ typedef struct NANODllExport NANO_OSAPI_WinSerialConnectionI
 
 #if NANO_CPP
     NANO_OSAPI_WinSerialConnectionI()
-    : port(EINVALID_HANDLE_VALUE)
+    : port(INVALID_HANDLE_VALUE)
     {
         
     }
