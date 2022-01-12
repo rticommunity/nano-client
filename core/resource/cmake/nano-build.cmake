@@ -470,9 +470,15 @@ endfunction()
 ################################################################################
 function(nano_project_load_connextdds)
     if (NOT DEFINED CONNEXTDDS_DIR)
-        file(TO_CMAKE_PATH "$ENV{CONNEXTDDS_DIR}" CONNEXTDDS_DIR)
+        if (NOT "$ENV{CONNEXTDDS_DIR}" STREQUAL "")
+            file(TO_CMAKE_PATH "$ENV{CONNEXTDDS_DIR}" CONNEXTDDS_DIR)
+        elseif (DEFINED NDDSHOME)
+            file(TO_CMAKE_PATH "${NDDSHOME}" CONNEXTDDS_DIR)
+        else()
+            file(TO_CMAKE_PATH "$ENV{NDDSHOME}" CONNEXTDDS_DIR)
+        endif()
     endif()
-    if (NOT EXISTS ${CONNEXTDDS_DIR})
+    if ("${CONNEXTDDS_DIR}" STREQUAL "" OR NOT EXISTS "${CONNEXTDDS_DIR}")
         message(FATAL_ERROR "Invalid CONNEXTDDS_DIR: '${CONNEXTDDS_DIR}'")
     endif()
     if (NOT DEFINED CONNEXTDDS_ARCH AND
@@ -489,13 +495,15 @@ function(nano_project_load_connextdds)
             "\"string sub-command REGEX, mode REPLACE needs at least 6 "
             "arguments total to command\".")
     endif()
-    if (NOT DEFINED CONNEXTDDS_VERSION)
-        set(CONNEXTDDS_VERSION              "6.0.0")
+    if (NOT "${CONNEXTDDS_VERSION}" STREQUAL "")
+        set(CONNEXTDDS_VERSION_REQ           "${CONNEXTDDS_VERSION}")
+    else()
+        set(CONNEXTDDS_VERSION_REQ            "6.0.0")
     endif()
 
-    list(APPEND CMAKE_MODULE_PATH   ${CONNEXTDDS_DIR}/resource/cmake)
+    list(APPEND CMAKE_MODULE_PATH   "${CONNEXTDDS_DIR}/resource/cmake")
 
-    find_package(RTIConnextDDS  "${CONNEXTDDS_VERSION}"
+    find_package(RTIConnextDDS  "${CONNEXTDDS_VERSION_REQ}"
         REQUIRED COMPONENTS     core)
     
     if (NOT RTIConnextDDS_FOUND)
@@ -503,6 +511,14 @@ function(nano_project_load_connextdds)
     else()
         message(STATUS "Loaded RTI Connext DDS libraries")
     endif()
+
+    if("${CONNEXTDDS_VERSION}" STREQUAL "")
+        set(CONNEXTDDS_VERSION "${RTICONNEXTDDS_VERSION}")
+    endif()
+    set(CONNEXTDDS_DIR "${CONNEXTDDS_DIR}" CACHE INTERNAL
+        "Installation directory of RTI Connext DDS" FORCE)
+    set(CONNEXTDDS_VERSION "${CONNEXTDDS_VERSION}" CACHE INTERNAL
+        "Loaded version of RTI Connext DDS" FORCE)
 endfunction()
 
 ################################################################################
