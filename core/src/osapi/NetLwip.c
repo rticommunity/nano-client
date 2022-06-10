@@ -40,6 +40,8 @@
 
 #if NANO_FEAT_TRANSPORT_PLUGIN_UDPV4
 
+#include <lwip/udp.h>
+
 NANO_PRIVATE
 void
 NANO_OSAPI_LwipUdpSocket_on_recv(
@@ -87,7 +89,6 @@ NANO_OSAPI_LwipUdpSocket_open(
 
     for (i = 0; i < NANO_LIMIT_LWIP_PBUF_OUT_MAX_LENGTH; i++)
     {
-        NANO_LIMIT_LWIP_PBUF_OUT_MAX_LENGTH;
         /* Create a pbuf for sending messages */
         self->pbuf_out[i] = pbuf_alloc(PBUF_TRANSPORT, 0, PBUF_REF);
         if (self->pbuf_out[i] == NULL)
@@ -133,7 +134,7 @@ NANO_OSAPI_LwipUdpSocket_send(
     NANO_RetCode rc = NANO_RETCODE_ERROR;
     ip_addr_t dst_addr;
     int e;
-    NANO_MessageBuffer *nxt = NULL;
+    const NANO_MessageBuffer *nxt = NULL;
     NANO_usize i = 0;
 
     NANO_LOG_FN_ENTRY
@@ -220,8 +221,7 @@ NANO_OSAPI_LwipUdpSocket_pbuf_to_mbuf(
     NANO_RetCode rc = NANO_RETCODE_ERROR;
     struct pbuf *nxt = p;
     NANO_usize pbuf_len = 0,
-               remaining = 0,
-               copied_len = 0;
+               remaining = 0;
     NANO_u8 *ptr = NULL;
     
     NANO_LOG_FN_ENTRY
@@ -298,12 +298,6 @@ NANO_OSAPI_LwipUdpSocket_recv(
     NANO_usize *const msg_size_out)
 {
     NANO_RetCode rc = NANO_RETCODE_ERROR;
-    NANO_usize read_len = 0,
-               msg_max = 0,
-               copy_len = 0;
-    NANO_u8 *msg_ptr = NULL,
-            *read_ptr = NULL;
-    NANO_bool no_ints = NANO_BOOL_FALSE;
     NANO_usize msg_size = 0;
     
     NANO_LOG_FN_ENTRY
@@ -329,7 +323,7 @@ NANO_OSAPI_LwipUdpSocket_recv(
                 self->pbuf_in, msg, NANO_MessageBuffer_data_len(msg)),
             NANO_LOG_ERROR_MSG("FAILED to convert pbuf to mbuf"));
         NANO_OSAPI_Memory_copy(
-            src_addr, self->read_addr, sizeof(self->read_addr));
+            src_addr, &self->read_addr, sizeof(self->read_addr));
         *src_port = self->read_port;
         msg_size = NANO_MessageBuffer_data_len(msg);
         *msg_size_out = msg_size;
@@ -419,7 +413,6 @@ done:
 NANO_RetCode
 NANO_OSAPI_LwipUdpSocket_close(NANO_OSAPI_Udpv4Socket *const self)
 {
-    NANO_RetCode rc = NANO_RETCODE_ERROR;
     NANO_usize i = 0;
 
     NANO_LOG_FN_ENTRY
@@ -437,16 +430,9 @@ NANO_OSAPI_LwipUdpSocket_close(NANO_OSAPI_Udpv4Socket *const self)
         pbuf_free(self->pbuf_out[i]);
         self->pbuf_out[i] = NULL;
     }
-    
-    rc = NANO_RETCODE_OK;
-    
-done:
-    if (NANO_RETCODE_OK != rc)
-    {
-        
-    }
+
     NANO_LOG_FN_EXIT_RC(rc)
-    return rc;
+    return NANO_RETCODE_OK;
 }
 
 #endif /* NANO_FEAT_TRANSPORT_PLUGIN_UDPV4 */
