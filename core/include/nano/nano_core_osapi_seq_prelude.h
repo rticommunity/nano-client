@@ -116,7 +116,6 @@
 #define TSeq_has_contiguous_buffer_mut
 #define TSeq_has_reference
 #define TSeq_has_reference_mut
-#define TSeq_has_copy
 #else
 #error "Invalid sequence API level specified"
 #endif

@@ -4,31 +4,37 @@
 # https://cmake.org/cmake/help/v3.11/module/CMakeFindDependencyMacro.html
 include(CMakeFindDependencyMacro)
 
-set(nano-core_COMPONENTS            core
-                                    transportudpv4
-                                    transportserial)
+set(nano-core-agent_COMPONENTS            coreagent
+                                    transportudpv4agent
+                                    transportserialagent)
 
-get_filename_component(nano-core_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+get_filename_component(nano-core-agent_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
 
-if (NOT TARGET nano::nanocore)
-    include(${nano-core_DIR}/nano-core-core-targets.cmake)
+include(${nano-core-agent_DIR}/nano-build.cmake)
+
+if(NOT TARGET RTIConnextDDS::c_api)
+    nano_project_load_connextdds()
 endif()
 
-foreach(_req_component IN LISTS nano-core_FIND_COMPONENTS)
-    list(FIND nano-core_COMPONENTS "${_req_component}" _req_component_FOUND)
+if(NOT TARGET nano::nanocoreagent)
+    include(${nano-core-agent_DIR}/nano-core-agent-coreagent-targets.cmake)
+endif()
+
+foreach(_req_component IN LISTS nano-core-agent_FIND_COMPONENTS)
+    list(FIND nano-core-agent_COMPONENTS "${_req_component}" _req_component_FOUND)
     if (_req_component_FOUND EQUAL -1)
-        set(nano-core_FOUND                 False)
-        set(nano-core_NOT_FOUND_MESSAGE
-                "Unsupported nano-core component: ${_req_component}")
+        set(nano-core-agent_FOUND                 False)
+        set(nano-core-agent_NOT_FOUND_MESSAGE
+                "Unsupported nano-core-agent component: ${_req_component}")
     endif()
 
     if (NOT TARGET nano::nano${_req_component})
-        include(${nano-core_DIR}/nano-core-${_req_component}-targets.cmake)
+        include(${nano-core-agent_DIR}/nano-core-agent-${_req_component}-targets.cmake)
     endif()
-    set(nano-core_${_req_component}_FOUND           true)
+    set(nano-core-agent_${_req_component}_FOUND           true)
 endforeach()
 
-check_required_components(nano-core)
+check_required_components(nano-core-agent)
 
 
 

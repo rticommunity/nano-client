@@ -120,7 +120,7 @@ NANO_OSAPI_BsdIpv4Addr_list(
         }
 
         addr = ((struct sockaddr_in*)if_addr)->sin_addr.s_addr;
-        if (NANO_OSAPI_Ipv4Addr_is_loopback(addr) ||
+        if (NANO_OSAPI_Ipv4Addr_is_loopback(&addr) ||
             addr == 0)
         {
             continue;

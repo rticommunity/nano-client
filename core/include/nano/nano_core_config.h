@@ -106,7 +106,7 @@
  * @brief Enable implementation of a simple memory buffer pool.
  * 
  */
-#define NANO_FEAT_BUFFERPOOL                1
+#define NANO_FEAT_BUFFERPOOL                0
 #endif /* NANO_FEAT_BUFFERPOOL */
 
 #ifndef NANO_FEAT_PROPERTY
@@ -1076,5 +1076,21 @@
 #if NANO_FEAT_AGENT
 #include "ndds/ndds_c.h"
 #endif /* NANO_FEAT_AGENT */
+
+/******************************************************************************
+ *                          Debug Assertions
+ ******************************************************************************/
+#ifndef NANO_DEBUG_ASSERT
+#if NANO_ENABLE_PRECONDITION
+#include <assert.h>
+#define NANO_DEBUG_ASSERT(cond_) \
+  assert(cond_);
+#define NANO_DEBUG_ARG_NOT_NULL(arg_) \
+  NANO_DEBUG_ASSERT(NULL != (arg_))
+#else /* NANO_ENABLE_PRECONDITION */
+#define NANO_DEBUG_ASSERT(cond_)
+#define NANO_DEBUG_ARG_NOT_NULL(arg_)
+#endif /* NANO_ENABLE_PRECONDITION */
+#endif /* NANO_DEBUG_ASSERT */
 
 #endif /* nano_core_config_h */

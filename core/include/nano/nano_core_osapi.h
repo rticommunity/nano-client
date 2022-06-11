@@ -309,14 +309,14 @@ typedef struct NANO_OSAPI_FooClockI {
  * 
  */
 NANO_RetCode
-NANO_OSAPI_initialize(NANO_OSAPI_Clock *self);
+NANO_OSAPI_Clock_initialize(NANO_OSAPI_Clock *self);
 
 /*e
  * @brief
  * 
  */
-NANO_u64
-NANO_OSAPI_Clock_millis(NANO_OSAPI_Clock *self);
+void
+NANO_OSAPI_Clock_millis(NANO_OSAPI_Clock *self, NANO_u64 *const ms_out);
 
 /** @} *//* nano_api_platform_sys_clock */
 
@@ -1088,7 +1088,7 @@ typedef struct NANODllExport NANO_MessageBufferQueueI
             }\
             (s_)->tail = nxt_;\
             (s_)->len -= 1;\
-            NANO_MessageBuffer_unlink_msg(*(tail_));\
+            NANO_MessageBuffer_unlink_msg(nxt_);\
         }\
     }\
 }
@@ -1433,10 +1433,10 @@ NANO_OSAPI_Ipv4Addr_from_octets(
  * @return NANO_bool 
  */
 NANO_bool
-NANO_OSAPI_Ipv4Addr_is_multicast(const NANO_Ipv4Addr self);
+NANO_OSAPI_Ipv4Addr_is_multicast(const NANO_Ipv4Addr * const self);
 
 #define NANO_OSAPI_Ipv4Addr_is_multicast(s_) \
-    ((NANO_u32_from_be((s_)) >> 28) == 0x0E)
+    ((((NANO_u8*)(s_))[0] & 0xf0) == 0xE0)
 
 /*e
  * @brief TODO
@@ -1445,11 +1445,10 @@ NANO_OSAPI_Ipv4Addr_is_multicast(const NANO_Ipv4Addr self);
  * @return NANO_bool 
  */
 NANO_bool
-NANO_OSAPI_Ipv4Addr_is_loopback(const NANO_Ipv4Addr self);
+NANO_OSAPI_Ipv4Addr_is_loopback(const NANO_Ipv4Addr * const self);
 
 #define NANO_OSAPI_Ipv4Addr_is_loopback(s_) \
-    ((NANO_u32_from_be((s_)) & 0xFF000000) == 0x7F000000)
-
+    (((NANO_u8*)(s_))[0] == 0x7F)
 
 /** @} *//* nano_api_infr_ipv4 */
 
@@ -1650,6 +1649,7 @@ NANO_OSAPI_Udpv4Socket_send(
  * @param src_addr Source address for the message.
  * @param src_port source UDP port for the message.
  * @param msg A buffer where the incoming message will be copied to.
+ * @param msg_size Size of the received message in bytes.
  * the received message.
  * @return NANO_RETCODE_OK if a message was correctly received.
  */
@@ -1658,7 +1658,8 @@ NANO_OSAPI_Udpv4Socket_recv(
     NANO_OSAPI_Udpv4Socket *const self,
     NANO_u8 *const src_addr,
     NANO_u16 *const src_port,
-    NANO_MessageBuffer *msg);
+    NANO_MessageBuffer *msg,
+    NANO_usize *const msg_size);
 
 /*e
  * @brief Close an existing UDPv4 socket.
@@ -2259,7 +2260,7 @@ NANO_Sequence_set_contiguous_buffer(
     NANO_PCOND((b_) == NULL || (m_) > 0)\
     NANO_PCOND((b_) != NULL || (m_) == 0)\
     NANO_PCOND((l_) <= (m_))\
-    (s_)->buffer = (b_);\
+    (s_)->buffer = (const NANO_u8*)(b_);\
     (s_)->max = (m_);\
     (s_)->len = (l_);\
     NANO_Sequence_flags_unset((s_),\
@@ -2295,7 +2296,7 @@ NANO_Sequence_set_serialized_buffer(
     NANO_PCOND((b_) == NULL || (sz_) > 0)\
     NANO_PCOND((b_) != NULL || (sz_) == 0)\
     NANO_PCOND((sz_) == 0 || (cnt_) > 0)\
-    (s_)->buffer = (b_);\
+    (s_)->buffer = (const NANO_u8*)(b_);\
     (s_)->max = (sz_);\
     (s_)->len = (cnt_);\
     NANO_Sequence_flags_set((s_), NANO_SEQUENCEFLAGS_SERIALIZED);\
@@ -2307,7 +2308,7 @@ NANO_Sequence_set_serialized_buffer(
 
 #define NANO_Sequence_contiguous_bufferI(s_) \
     ((NANO_Sequence_initialized((s_)) && \
-        NANO_Sequence_flags((s_),NANO_SEQUENCEFLAGS_SERIALIZED))?\
+        !NANO_Sequence_flags((s_),NANO_SEQUENCEFLAGS_SERIALIZED))?\
             (s_)->buffer : NULL)
 
 /*i
@@ -2396,19 +2397,6 @@ NANO_Sequence_reference_mut(
 
 #define NANO_Sequence_reference_mut(s_,i_) \
     ((NANO_u8*)NANO_Sequence_referenceI((s_),(i_)))
-
-/*i
- * @brief TODO
- * 
- * @param self 
- * @param from 
- * @return NANODllExport NANO_Sequence_copy 
- */
-NANODllExport
-NANO_RetCode
-NANO_Sequence_copy(
-    NANO_Sequence *const self,
-    const NANO_Sequence *const from);
 
 /*i
  * @brief Check if one or more flags have been set on a sequence.
@@ -2613,14 +2601,6 @@ NANO_Sequence_flags_unset(
 #define NANO_TSeqImpl_set_length(s_,l_) \
     NANO_Sequence_set_length(&(s_)->base,(l_))
 
-/*i
- * @brief Helper macro to implement typed version of
- * NANO_Sequence_copy.
- */
-#define NANO_TSeqImpl_copy(s_,f_) \
-    NANO_Sequence_copy(&(s_)->base,&(f_)->base)
-
-
 /*i @} *//* nano_api_infr_seq_impl */
 
 #endif /* NANO_FEAT_TYPED_SEQUENCE */
@@ -2682,7 +2662,8 @@ NANO_SequenceIterator_deserialized_size(
     const NANO_SequenceIterator *const self);
 
 #define NANO_SequenceIterator_deserialized_size(s_) \
-    ((NANO_usize) ((s_)->head - (s_)->seq->buffer))
+    (((s_)->seq != NULL)?\
+      ((NANO_usize) ((s_)->head - (s_)->seq->buffer)):0)
 
 /*i
  * @brief Retrieve the total amount of space (in bytes) left to deserialize in
@@ -2696,8 +2677,9 @@ NANO_SequenceIterator_remaining(
     const NANO_SequenceIterator *const self);
 
 #define NANO_SequenceIterator_remaining(s_) \
+    (((s_)->seq != NULL)?\
     ((NANO_usize)\
-        ((s_)->seq->max - NANO_SequenceIterator_deserialized_size(s_)))
+        ((s_)->seq->max - NANO_SequenceIterator_deserialized_size(s_))):0)
 
 /*i
  * @brief Check if there is at least the specified amount of space remaining

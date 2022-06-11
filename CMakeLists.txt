@@ -28,9 +28,6 @@ project(nano-client
 ################################################################################
 
 if(NOT TARGET nano::nanocore)
-    message(STATUS "ENABLE_XRCE_AGENT := ${ENABLE_XRCE_AGENT}")
-    message(STATUS "nano-core_ENABLE_XRCE_AGENT := ${nano-core_ENABLE_XRCE_AGENT}")
-    message(STATUS "nano-core-agent_ENABLE_XRCE_AGENT := ${nano-core-agent_ENABLE_XRCE_AGENT}")
     add_subdirectory(core)
 endif()
 

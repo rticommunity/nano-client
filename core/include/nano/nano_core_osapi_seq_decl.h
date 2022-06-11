@@ -191,11 +191,4 @@ TSeq_set_length(TSeq *const self, const NANO_usize len);
 #undef TSeq_has_set_length
 #endif /* TSeq_has_set_length */
 
-#ifdef TSeq_has_copy
-NANODllExport
-NANO_RetCode
-TSeq_copy(TSeq *const self, const TSeq *const from);
-#undef TSeq_has_copy
-#endif /* TSeq_has_copy */
-
 #include "nano/nano_core_osapi_seq_end.h"

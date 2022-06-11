@@ -28,6 +28,8 @@ NANO_Time_initialize(
 {
     NANO_RetCode rc = NANO_RETCODE_ERROR;
     NANO_Time norm_t = NANO_TIME_INITIALIZER;
+
+    NANO_DEBUG_ARG_NOT_NULL(self)
     
     self->sec = sec;
     self->nanosec = nanosec;
@@ -50,6 +52,9 @@ NANO_Time_normalize(const NANO_Time *const self, NANO_Time *const norm_t)
 {
     NANO_RetCode rc = NANO_RETCODE_ERROR;
     const NANO_Time ts_zero = NANO_TIME_INITIALIZER;
+
+    NANO_DEBUG_ARG_NOT_NULL(self)
+    NANO_DEBUG_ARG_NOT_NULL(norm_t)
 
     if (self == (const NANO_Time *const) norm_t)
     {
@@ -108,6 +113,9 @@ NANO_Time_to_sec(const NANO_Time *const self, NANO_u32 *const sec_out)
     NANO_RetCode rc = NANO_RETCODE_ERROR;
     NANO_Time norm_self = NANO_TIME_INITIALIZER;
 
+    NANO_DEBUG_ARG_NOT_NULL(self)
+    NANO_DEBUG_ARG_NOT_NULL(sec_out)
+
     if (NANO_Time_is_infinite(self))
     {
         /* TODO nanolog */
@@ -143,7 +151,9 @@ NANO_Time_to_millis(const NANO_Time *const self, NANO_u64 *const millis_out)
     NANO_u64 millis_sec = 0,
              millis_nsec = 0,
              millis_nsec_rem = 0;
-    
+
+    NANO_DEBUG_ARG_NOT_NULL(self)
+    NANO_DEBUG_ARG_NOT_NULL(millis_out)
     NANO_PCOND(!NANO_Time_is_infinite(self))
     NANO_PCOND(NANO_Time_is_normalized(self))
 

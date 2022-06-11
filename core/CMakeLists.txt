@@ -222,6 +222,13 @@ if(${PROJECT_NAME}_ENABLE_TRANSPORT_SERIAL)
 endif()
 
 ################################################################################
+# Install build helper rules
+################################################################################
+install(FILES
+  resource/cmake/nano-build.cmake
+  DESTINATION cmake/
+)
+################################################################################
 
 nano_project_install()
 

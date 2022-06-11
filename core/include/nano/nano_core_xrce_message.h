@@ -1005,9 +1005,6 @@ NANO_XRCE_SampleData_finalize(
 #define NANO_XRCE_SampleDataSeq_set_length(s_, l_) \
     NANO_TSeqImpl_set_length(s_,l_)
 
-#define NANO_XRCE_SampleDataSeq_copy(s_, f_) \
-    NANO_TSeqImpl_copy(s_,f_)
-
 /*i @} *//* nano_api_xrce_payload_data_sampledataseq */
 
 #endif /* NANO_FEAT_DATA_FORMAT_DATASEQ && NANO_FEAT_TYPED_SEQUENCE */
@@ -1123,9 +1120,6 @@ NANO_XRCE_Sample_finalize(
 #define NANO_XRCE_SampleSeq_set_length(s_, l_) \
     NANO_TSeqImpl_set_length(s_,l_)
 
-#define NANO_XRCE_SampleSeq_copy(s_, f_) \
-    NANO_TSeqImpl_copy(s_,f_)
-
 /*i @} *//* nano_api_xrce_payload_data_sampleseq */
 
 #endif /* NANO_FEAT_DATA_FORMAT_SAMPLESEQ && NANO_FEAT_TYPED_SEQUENCE */
@@ -1240,9 +1234,6 @@ NANO_XRCE_SampleDelta_finalize(
     
 #define NANO_XRCE_SampleDeltaSeq_set_length(s_, l_) \
     NANO_TSeqImpl_set_length(s_,l_)
-
-#define NANO_XRCE_SampleDeltaSeq_copy(s_, f_) \
-    NANO_TSeqImpl_copy(s_,f_)
 
 #endif /* NANO_FEAT_TYPED_SEQUENCE */
 
