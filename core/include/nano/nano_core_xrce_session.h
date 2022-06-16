@@ -220,6 +220,7 @@ NANO_XRCE_InlineHeaderBuffer_initialize(
 #define NANO_XRCE_InlineHeaderBuffer_initialize(s_,ss_,k_,st_) \
 {\
     NANO_XRCE_SeqNum start_sn_ = NANO_XRCE_SEQNUM_INITIALIZER;\
+    NANO_OSAPI_Memory_zero((s_), NANO_XRCE_SessionId_header_size((ss_)));\
     NANO_XRCE_SeqNum_plusplus(&start_sn_);\
     NANO_MessageBuffer_flags_set_inline((s_));\
     NANO_MessageBuffer_set_data_offset((s_),0);\
@@ -509,6 +510,7 @@ NANO_XRCE_StreamStorage_initialize(
     NANO_MessageBufferData *const payload_in,
     const NANO_usize payload_in_max);
 
+#if 1
 #define NANO_XRCE_StreamStorage_initialize(s_,h_,hmx_,p_,pmx_,pt_,ptmx_,pu_,pumx_,fin_,finmx_) \
 {\
     NANO_PCOND((s_) != NULL)\
@@ -534,6 +536,7 @@ NANO_XRCE_StreamStorage_initialize(
     (s_)->payload_in_max = (finmx_);\
     (s_)->payload_in_len = 0;\
 }
+#endif
 
 /*i
  * @brief TODO
@@ -1935,11 +1938,11 @@ struct NANO_XRCE_SessionI
 #endif /* NANO_FEAT_SYSTIME */
 #if NANO_FEAT_AGENT
       ,
-      *pool_header(NULL),
-      *pool_payload(NULL),
-      *pool_payload_tail(NULL),
-      *pool_payload_user(NULL),
-      *pool_payload_in(NULL)
+      pool_header(NULL),
+      pool_payload(NULL),
+      pool_payload_tail(NULL),
+      pool_payload_user(NULL),
+      pool_payload_in(NULL)
 #endif /* NANO_FEAT_FRAGMENT */
     {
         

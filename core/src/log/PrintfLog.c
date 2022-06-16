@@ -20,6 +20,14 @@
 
 #if NANO_FEAT_LOG && NANO_FEAT_LOG_IMPL_PRINTF
 
+#ifndef NANO_OSAPI_UINT64_PRINTF_FORMAT
+#define NANO_OSAPI_UINT64_PRINTF_FORMAT         "%lu"
+#endif /* NANO_OSAPI_UINT64_PRINTF_FORMAT */
+
+#ifndef NANO_OSAPI_INT64_PRINTF_FORMAT
+#define NANO_OSAPI_INT64_PRINTF_FORMAT          "%ld"
+#endif /* NANO_OSAPI_INT64_PRINTF_FORMAT */
+
 #if NANO_FEAT_LOG_COLOR
 #define ENABLE_TERMCOLOR
 #include "nano/nano_core_log_termcolor.h"
@@ -362,7 +370,7 @@ NANO_LOG_PrintfWriter_write_u64(
     NANO_LOG_Writer *const self, const char *const key, const NANO_u64 val)
 {
     NANO_LOG_PrintfWriter_write_key(self,key);
-    NANO_OSAPI_Debug_printf("%llu", val);
+    NANO_OSAPI_Debug_printf(NANO_OSAPI_UINT64_PRINTF_FORMAT, val);
 }
 
 void
@@ -394,7 +402,7 @@ NANO_LOG_PrintfWriter_write_i64(
     NANO_LOG_Writer *const self, const char *const key, const NANO_i64 val)
 {
     NANO_LOG_PrintfWriter_write_key(self,key);
-    NANO_OSAPI_Debug_printf("%lld", val);
+    NANO_OSAPI_Debug_printf(NANO_OSAPI_INT64_PRINTF_FORMAT, val);
 }
 
 void

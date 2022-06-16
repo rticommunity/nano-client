@@ -8,6 +8,10 @@ set(nano-core-agent_COMPONENTS      coreagent
                                     transportudpv4agent
                                     transportserialagent)
 
+if("${nano-core-agent_FIND_COMPONENTS}" STREQUAL "")
+  set(nano-core-agent_FIND_COMPONENTS ${nano-core-agent_COMPONENTS})
+endif()
+
 get_filename_component(nano-core-agent_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
 
 include(${nano-core-agent_DIR}/nano-build.cmake)

@@ -138,7 +138,6 @@ NANO_OSAPI_PosixClock_millis(NANO_OSAPI_Clock *self, NANO_u64 *const ms_out);
 #include <stdio.h>
 #define NANO_OSAPI_Debug_printf                 printf
 #define NANO_HAVE_PRINTF
-
 #endif /* NANO_FEAT_LOG */
 
 /******************************************************************************

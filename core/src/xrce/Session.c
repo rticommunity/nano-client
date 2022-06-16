@@ -729,6 +729,81 @@ NANO_XRCE_Stream_next_payload_tail_buffer(
 
 #endif /* NANO_FEAT_AGENT */
 
+#if 0
+/* This implementation of NANO_XRCE_StreamStorage_initialize()
+  initializes all passed buffers to zero. It should be used after writing
+  some unit tests to validate it */
+void
+NANO_XRCE_StreamStorage_initialize(
+    NANO_XRCE_StreamStorage *const self,
+    NANO_MessageBufferData *const header,
+    const NANO_usize header_max,
+    NANO_MessageBufferData *const payload,
+    const NANO_usize payload_max,
+    NANO_MessageBufferData *const payload_tail,
+    const NANO_usize payload_tail_max,
+    NANO_MessageBuffer *const payload_user,
+    const NANO_usize payload_user_max,
+    NANO_MessageBufferData *const payload_in,
+    const NANO_usize payload_in_max)
+{
+    NANO_PCOND(self != NULL)
+    NANO_PCOND(header != NULL && header_max > 0)
+    NANO_PCOND(payload != NULL && payload_max > 0)
+    NANO_PCOND((payload_tail != NULL && payload_tail_max > 0) ||
+                    (payload_tail == NULL && payload_tail_max == 0))
+    NANO_PCOND((payload_user != NULL && payload_user_max > 0) ||
+                    (payload_user == NULL && payload_user_max == 0))
+    self->header = header;
+    self->header_max = header_max;
+    self->header_len = 0;
+    if (header != NULL)
+    {
+        NANO_OSAPI_Memory_zero(header,
+          header_max *
+            (NANO_MESSAGEBUFFER_INLINE_SIZE(
+                NANO_XRCE_INLINEHEADERBUFFER_INLINE_SIZE_BYTES) *
+                sizeof(NANO_MessageBufferData)));
+    }
+    self->payload = payload;
+    self->payload_max = payload_max;
+    self->payload_len = 0;
+    if (payload != NULL)
+    {
+        NANO_OSAPI_Memory_zero(payload,
+          payload_max *
+            (NANO_MESSAGEBUFFER_INLINE_SIZE(
+                NANO_XRCE_STREAM_INLINE_BUFFER_HEADER_SIZE_BYTES) *
+                sizeof(NANO_MessageBufferData)));
+    }
+    self->payload_tail = payload_tail;
+    self->payload_tail_max = payload_tail_max;
+    self->payload_tail_len = 0;
+    if (payload_tail != NULL)
+    {
+        NANO_OSAPI_Memory_zero(payload_tail,
+          payload_tail_max *
+            (NANO_MESSAGEBUFFER_INLINE_SIZE(
+                NANO_XRCE_STREAM_INLINE_BUFFER_TAIL_SIZE_BYTES) *
+                sizeof(NANO_MessageBufferData)));
+    }
+    self->payload_user = payload_user;
+    self->payload_user_max = payload_user_max;
+    self->payload_user_len = 0;
+    if (payload_user != NULL)
+    {
+        NANO_OSAPI_Memory_zero(payload_user,
+          payload_user_max * sizeof(NANO_MessageBuffer));
+    }
+    self->payload_in = payload_in;
+    self->payload_in_max = payload_in_max;
+    self->payload_in_len = 0;
+    if (payload_in != NULL)
+    {
+        NANO_OSAPI_Memory_zero(payload_in, payload_in_max);
+    }
+}
+#endif
 
 NANO_MessageBuffer *
 NANO_XRCE_Session_allocate_message(
@@ -4626,6 +4701,8 @@ NANO_XRCE_Session_send_acknack(
     NANO_PCOND(stream != NULL)
     NANO_PCOND(NANO_XRCE_Stream_id(&stream->base) != NANO_XRCE_STREAMID_NONE)
 
+    NANO_OSAPI_Memory_zero(&ackn_buffer, sizeof(ackn_buffer));
+
     NANO_MessageBuffer_flags_set_inline(ackn_mbuf);
     NANO_MessageBuffer_set_data_len(ackn_mbuf,
                                     NANO_XRCE_ACKNACKPAYLOAD_SERIALIZED_SIZE_MAX);
@@ -4744,6 +4821,7 @@ NANO_XRCE_Session_send_heartbeat(
     NANO_PCOND(stream != NULL)
     NANO_PCOND(NANO_XRCE_Stream_id(&stream->base) != NANO_XRCE_STREAMID_NONE)
 
+    NANO_OSAPI_Memory_zero(&hb_payload, sizeof(hb_payload));
     NANO_MessageBuffer_flags_set_inline(hb_payload);
     NANO_MessageBuffer_set_data_len(hb_payload,
                                     NANO_XRCE_HEARTBEATPAYLOAD_SERIALIZED_SIZE_MAX);

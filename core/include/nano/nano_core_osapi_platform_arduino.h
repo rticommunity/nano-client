@@ -41,8 +41,13 @@
    "struct ip_info", so we must also include "lwip/ip_addr.h" */
 #include "lwip/ip_addr.h"
 #include "user_interface.h"
+#ifndef NANO_OSAPI_UINT64_PRINTF_FORMAT
+#define NANO_OSAPI_UINT64_PRINTF_FORMAT         "%llu"
+#endif /* NANO_OSAPI_UINT64_PRINTF_FORMAT */
+#ifndef NANO_OSAPI_INT64_PRINTF_FORMAT
+#define NANO_OSAPI_INT64_PRINTF_FORMAT          "%lld"
+#endif /* NANO_OSAPI_INT64_PRINTF_FORMAT */
 #endif /* NANO_FEAT_LOG */
-
 
 
 #elif defined(ESP32)
