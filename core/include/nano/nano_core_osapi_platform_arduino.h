@@ -37,6 +37,9 @@
 /* Required for ets_memset() */
 #include "ets_sys.h"
 #if NANO_FEAT_LOG
+/* user_interface.h causes warning for a missing definition of
+   "struct ip_info", so we must also include "lwip/ip_addr.h" */
+#include "lwip/ip_addr.h"
 #include "user_interface.h"
 #endif /* NANO_FEAT_LOG */
 

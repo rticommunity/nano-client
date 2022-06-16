@@ -362,7 +362,7 @@ NANO_LOG_PrintfWriter_write_u64(
     NANO_LOG_Writer *const self, const char *const key, const NANO_u64 val)
 {
     NANO_LOG_PrintfWriter_write_key(self,key);
-    NANO_OSAPI_Debug_printf("%lu", val);
+    NANO_OSAPI_Debug_printf("%llu", val);
 }
 
 void
@@ -394,7 +394,7 @@ NANO_LOG_PrintfWriter_write_i64(
     NANO_LOG_Writer *const self, const char *const key, const NANO_i64 val)
 {
     NANO_LOG_PrintfWriter_write_key(self,key);
-    NANO_OSAPI_Debug_printf("%ld", val);
+    NANO_OSAPI_Debug_printf("%lld", val);
 }
 
 void

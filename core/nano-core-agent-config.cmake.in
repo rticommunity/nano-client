@@ -4,7 +4,7 @@
 # https://cmake.org/cmake/help/v3.11/module/CMakeFindDependencyMacro.html
 include(CMakeFindDependencyMacro)
 
-set(nano-core-agent_COMPONENTS            coreagent
+set(nano-core-agent_COMPONENTS      coreagent
                                     transportudpv4agent
                                     transportserialagent)
 

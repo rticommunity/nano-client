@@ -338,6 +338,7 @@ NANO_OSAPI_LwipUdpSocket_recv(
     }
     else
     {
+        NANO_MessageBuffer_set_data_len(msg, 0);
 #ifdef NANO_HAVE_INTERRUPTS
         NANO_OSAPI_System_enable_interrupts();
 #else
@@ -431,7 +432,7 @@ NANO_OSAPI_LwipUdpSocket_close(NANO_OSAPI_Udpv4Socket *const self)
         self->pbuf_out[i] = NULL;
     }
 
-    NANO_LOG_FN_EXIT_RC(rc)
+    NANO_LOG_FN_EXIT
     return NANO_RETCODE_OK;
 }
 
