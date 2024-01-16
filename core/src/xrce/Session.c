@@ -4821,7 +4821,7 @@ NANO_XRCE_Session_send_heartbeat(
     NANO_PCOND(stream != NULL)
     NANO_PCOND(NANO_XRCE_Stream_id(&stream->base) != NANO_XRCE_STREAMID_NONE)
 
-    NANO_OSAPI_Memory_zero(&hb_payload, sizeof(hb_payload));
+    NANO_OSAPI_Memory_zero(&hb_data, sizeof(hb_data));
     NANO_MessageBuffer_flags_set_inline(hb_payload);
     NANO_MessageBuffer_set_data_len(hb_payload,
                                     NANO_XRCE_HEARTBEATPAYLOAD_SERIALIZED_SIZE_MAX);

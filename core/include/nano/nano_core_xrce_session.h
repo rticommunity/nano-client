@@ -220,7 +220,8 @@ NANO_XRCE_InlineHeaderBuffer_initialize(
 #define NANO_XRCE_InlineHeaderBuffer_initialize(s_,ss_,k_,st_) \
 {\
     NANO_XRCE_SeqNum start_sn_ = NANO_XRCE_SEQNUM_INITIALIZER;\
-    NANO_OSAPI_Memory_zero((s_), NANO_XRCE_SessionId_header_size((ss_)));\
+    NANO_OSAPI_Memory_zero(\
+        &(s_)->data, sizeof((s_)->data) + NANO_XRCE_SessionId_header_size((ss_)));\
     NANO_XRCE_SeqNum_plusplus(&start_sn_);\
     NANO_MessageBuffer_flags_set_inline((s_));\
     NANO_MessageBuffer_set_data_offset((s_),0);\
